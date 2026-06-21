@@ -3,7 +3,6 @@ import {
   Leaf, Printer, FileCheck, FileX, RefreshCw, Search, X, ShieldAlert,
 } from "lucide-react";
 import { SectionHeader, EmptyState, Spinner, KpiCard } from "../components/ui";
-import { ShareActions } from "../components/ShareActions";
 import { useDashboardExports } from "../lib/actions";
 import { demoCites, fmtEur, fmtNum } from "../lib/engine";
 import { upsertCitesItem } from "../lib/data";
@@ -46,13 +45,6 @@ export function CitesDashboard({
   const incomplete = all.filter((c) => c.dossier_status === "todo" || c.dossier_status === "reexport_required").length;
   const inProgress = all.filter((c) => c.dossier_status === "in_progress").length;
 
-  const waSummary = [
-    { label: "Pièces CITES", value: fmtNum(totalPieces) },
-    { label: "Valeur totale", value: fmtEur(totalValue) },
-    { label: "Dossiers en cours", value: fmtNum(inProgress) },
-    { label: "Incomplets", value: fmtNum(incomplete) },
-  ];
-
   if (loading && all.length === 0) {
     return (
       <div className="flex items-center justify-center py-24 text-graphite-500">
@@ -68,12 +60,9 @@ export function CitesDashboard({
         title="CITES"
         subtitle="Suivi des produits soumis à réglementation et préparation des dossiers"
         actions={
-          <>
-            <ShareActions title="CITES" summary={waSummary} notify={notify} />
-            <button className="btn-ghost" onClick={refresh} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualiser
-            </button>
-          </>
+          <button className="btn-ghost" onClick={refresh} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualiser
+          </button>
         }
       />
 

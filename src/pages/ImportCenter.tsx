@@ -4,7 +4,6 @@ import {
   SlidersHorizontal, RefreshCw, Layers, Clock,
 } from "lucide-react";
 import { SectionHeader, Spinner, EmptyState } from "../components/ui";
-import { ShareActions } from "../components/ShareActions";
 import type { StoreState } from "../lib/useStore";
 import { persistAndRefresh } from "../lib/useStore";
 import { parseWorkbook, saveImport, deleteImport } from "../lib/data";
@@ -89,14 +88,6 @@ export function ImportCenter({
     incompatible: imports.filter((i) => i.status === "incompatible").length,
   };
 
-  const waSummary = [
-    { label: "Imports", value: counts.all },
-    { label: "Reconnus", value: counts.recognized },
-    { label: "Mapping requis", value: counts.mapping_required },
-    { label: "Incompatibles", value: counts.incompatible },
-    { label: "Types pris en charge", value: fileTypes.length },
-  ];
-
   return (
     <div className="space-y-6">
       <SectionHeader
@@ -105,7 +96,6 @@ export function ImportCenter({
         subtitle="Importez vos fichiers Excel — détection de type, mapping de colonnes, aperçu des données"
         actions={
           <>
-            <ShareActions title="Import Center" summary={waSummary} notify={notify} />
             <button className="btn-ghost" onClick={rebuild} disabled={busy || imports.length === 0}>
               <RefreshCw className={`h-4 w-4 ${busy ? "animate-spin" : ""}`} /> Reconstruire
             </button>

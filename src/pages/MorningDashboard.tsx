@@ -3,7 +3,6 @@ import {
   Truck, Sparkles, AlertTriangle, Clock, Search, RefreshCw, Upload,
 } from "lucide-react";
 import { SectionHeader, KpiCard, Spinner, RiskTag } from "../components/ui";
-import { ShareActions } from "../components/ShareActions";
 import { useDashboardExports } from "../lib/actions";
 import {
   fmtNum, demoTransit, demoNegativeStock,
@@ -90,12 +89,9 @@ export function MorningDashboard({
         title="Morning Dashboard"
         subtitle="Stock On Hand (MB52) & transit (VL06I) — anomalies et ancienneté des transits"
         actions={
-          <>
-            <ShareActions title="Morning Report" summary={waSummary} notify={notify} />
-            <button className="btn-ghost" onClick={refresh} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualiser
-            </button>
-          </>
+          <button className="btn-ghost" onClick={refresh} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualiser
+          </button>
         }
       />
 

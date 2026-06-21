@@ -897,9 +897,10 @@ export function demoKpis(): KpiOverride[] {
   return [
     { key: "annual_sales", label: "Ventes annuelles", value_numeric: 0, unit: "EUR", updated_at: "", updated_by: "" },
     { key: "ytd_sales", label: "Ventes YTD", value_numeric: 0, unit: "EUR", updated_at: "", updated_by: "" },
-    { key: "completion_rate", label: "Taux de complétion", value_numeric: 0, unit: "%", updated_at: "", updated_by: "" },
+    { key: "mtd_sales", label: "Ventes MTD", value_numeric: 0, unit: "EUR", updated_at: "", updated_by: "" },
+    { key: "shrinkage_3m", label: "Shrinkage 3 mois", value_numeric: 0, unit: "%", updated_at: "", updated_by: "" },
+    { key: "compression_rate", label: "Taux de compression", value_numeric: 0, unit: "%", updated_at: "", updated_by: "" },
     { key: "conversion_rate", label: "Taux de conversion", value_numeric: 0, unit: "%", updated_at: "", updated_by: "" },
     { key: "saturation_rate", label: "Taux de saturation", value_numeric: 0, unit: "%", updated_at: "", updated_by: "" },
-    { key: "shrinkage", label: "Shrinkage", value_numeric: 0, unit: "%", updated_at: "", updated_by: "" },
   ];
 }

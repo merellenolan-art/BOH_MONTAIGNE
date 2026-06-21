@@ -4,7 +4,6 @@ import {
   RefreshCw, Search,
 } from "lucide-react";
 import { SectionHeader, KpiCard, Spinner, ZoneTag } from "../components/ui";
-import { ShareActions } from "../components/ShareActions";
 import { useDashboardExports } from "../lib/actions";
 import { demoEveningFlows, fmtEur, fmtNum } from "../lib/engine";
 import type { StoreState } from "../lib/useStore";
@@ -60,12 +59,9 @@ export function EveningDashboard({
         title="Evening Dashboard"
         subtitle="Indicateurs de clôture de journée — flux entrants, sortants et restes"
         actions={
-          <>
-            <ShareActions title="Evening Report" summary={waSummary} notify={notify} />
-            <button className="btn-ghost" onClick={refresh} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualiser
-            </button>
-          </>
+          <button className="btn-ghost" onClick={refresh} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualiser
+          </button>
         }
       />
 

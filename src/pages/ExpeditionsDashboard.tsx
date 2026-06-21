@@ -3,7 +3,6 @@ import {
   Truck, RefreshCw, Search, AlertTriangle, AlertOctagon,
 } from "lucide-react";
 import { SectionHeader, KpiCard, EmptyState, Spinner, RiskTag, ZoneTag } from "../components/ui";
-import { ShareActions } from "../components/ShareActions";
 import { useDashboardExports } from "../lib/actions";
 import { demoExpeditions, fmtEur, fmtNum } from "../lib/engine";
 import type { StoreState } from "../lib/useStore";
@@ -64,12 +63,9 @@ export function ExpeditionsDashboard({
         title="Expéditions"
         subtitle="Suivi des expéditions FastShipment — destinations, statuts et écarts bloqués"
         actions={
-          <>
-            <ShareActions title="Expéditions" summary={waSummary} notify={notify} />
-            <button className="btn-ghost" onClick={refresh} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualiser
-            </button>
-          </>
+          <button className="btn-ghost" onClick={refresh} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualiser
+          </button>
         }
       />
 

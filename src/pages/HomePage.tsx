@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import { SectionHeader, KpiCard, Spinner, RiskTag } from "../components/ui";
 import { FilterBar, filterRows, sumField, useFilters } from "../components/dashboard";
-import { ShareActions } from "../components/ShareActions";
 import { DestinationSummaryCard } from "../components/DestinationSummary";
 import type { View } from "../components/Layout";
 import type { StoreState } from "../lib/useStore";
@@ -110,7 +109,6 @@ export function HomePage({
             <span className="text-xs text-graphite-500 hidden sm:inline">
               Dernier import : {lastUpdated ? lastUpdated.toLocaleString("fr-FR") : "—"}
             </span>
-            <ShareActions title="BOH Montaigne — Centre de pilotage" summary={waSummary} notify={notify} />
             <button className="btn-ghost" onClick={refresh} disabled={loading}>
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualiser
             </button>
@@ -325,7 +323,7 @@ function KpiEditor({
         </div>
         {!hasImports && <span className="tag-neutral text-[10px]">À compléter</span>}
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
         {kpis.map((k) => {
           const raw = draft[k.key] ?? "0";
           return (

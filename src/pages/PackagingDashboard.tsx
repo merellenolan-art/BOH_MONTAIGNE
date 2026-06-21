@@ -3,7 +3,6 @@ import {
   Package, LayoutGrid, List, AlertTriangle, RefreshCw, Search,
 } from "lucide-react";
 import { SectionHeader, EmptyState, Spinner, RiskTag } from "../components/ui";
-import { ShareActions } from "../components/ShareActions";
 import { useDashboardExports } from "../lib/actions";
 import { demoPackaging, fmtNum } from "../lib/engine";
 import type { StoreState } from "../lib/useStore";
@@ -65,7 +64,6 @@ export function PackagingDashboard({
                 <List className="h-3.5 w-3.5 inline mr-1" /> Tableau
               </button>
             </div>
-            <ShareActions title="Packaging" summary={waSummary} notify={notify} />
             <button className="btn-ghost" onClick={refresh} disabled={loading}>
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualiser
             </button>

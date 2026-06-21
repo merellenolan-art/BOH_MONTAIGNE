@@ -3,7 +3,6 @@ import {
   Receipt, RefreshCw, Search, AlertTriangle, CheckCircle2, Scale,
 } from "lucide-react";
 import { SectionHeader, EmptyState, Spinner } from "../components/ui";
-import { ShareActions } from "../components/ShareActions";
 import { useDashboardExports } from "../lib/actions";
 import { demoOracleSap, fmtEur, fmtNum } from "../lib/engine";
 import type { StoreState } from "../lib/useStore";
@@ -67,12 +66,9 @@ export function OracleDashboard({
         title="Caisse / Oracle"
         subtitle="Comparateur entre export Oracle (caisse) et SAP ventes — mise en évidence des écarts"
         actions={
-          <>
-            <ShareActions title="Caisse / Oracle" summary={waSummary} notify={notify} />
-            <button className="btn-ghost" onClick={refresh} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualiser
-            </button>
-          </>
+          <button className="btn-ghost" onClick={refresh} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualiser
+          </button>
         }
       />
 
