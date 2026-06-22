@@ -33,6 +33,11 @@ export interface FileType {
 
 export type ImportStatus = "recognized" | "mapping_required" | "incompatible";
 
+export interface RejectReason {
+  reason: string;
+  count: number;
+}
+
 export interface ImportRecord {
   id: string;
   file_type: string | null;
@@ -42,7 +47,33 @@ export interface ImportRecord {
   row_count: number;
   status: ImportStatus;
   rows: Record<string, unknown>[];
+  accepted_count?: number;
+  rejected_count?: number;
+  rejected_reasons?: RejectReason[];
+  preview_rows?: Record<string, unknown>[];
   imported_at: string;
+}
+
+export type IndicatorFamily =
+  | "stock"
+  | "transit"
+  | "newness"
+  | "sales"
+  | "adjust"
+  | "inbound"
+  | "outbound"
+  | "consignment"
+  | "reservations"
+  | "terrain";
+
+export interface IndicatorSource {
+  family: IndicatorFamily;
+  file_type: string | null;
+  file_name: string | null;
+  file_id: string | null;
+  imported_at: string | null;
+  row_count: number;
+  has_data: boolean;
 }
 
 export interface MappingRecord {

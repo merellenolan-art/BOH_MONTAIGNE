@@ -18,4 +18,5 @@ export const DB = {
   imports: "boh_imports",
   mappings: "boh_mappings",
   summary: "boh_department_summary",
+  indicatorSources: "boh_indicator_sources",
 } as const;

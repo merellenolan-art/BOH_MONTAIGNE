@@ -7,10 +7,12 @@ import type {
   FileType,
   ImportRecord,
   ImportStatus,
+  IndicatorSource,
   KpiOverride,
   MappingRecord,
   NormalizedRow,
   PackagingItem,
+  RejectReason,
   RiskLevel,
 } from "../types";
 
@@ -272,35 +274,198 @@ export function agingRisk(aging: number | null): RiskLevel {
 /* Row normalization from raw import + mapping                         */
 /* ------------------------------------------------------------------ */
 
-export function normalizeRows(
-  rows: Record<string, unknown>[],
+/* ------------------------------------------------------------------ */
+/* Column-letter helpers (SAP exports are column-stable)              */
+/* ------------------------------------------------------------------ */
+
+/** Convert an Excel column letter (A, B, …, AA, AB) to a 0-based index. */
+export function columnLetterToIndex(letter: string): number {
+  const l = String(letter ?? "").toUpperCase().trim();
+  if (!/^[A-Z]+$/.test(l)) return -1;
+  let idx = 0;
+  for (let i = 0; i < l.length; i++) idx = idx * 26 + (l.charCodeAt(i) - 64);
+  return idx - 1;
+}
+
+/**
+ * Per-file-type column-letter spec from the requirements.
+ * Each entry maps a canonical field to the Excel column letter that holds it.
+ * Used as a fallback when header-name mapping is absent or untrusted, and to
+ * detect whether the department column was identified with certainty.
+ *
+ * Letters: A=1, …, K=11, N=14, P=16, R=18, T=20, U=21, AA=27, AB=28.
+ */
+export interface ColumnSpec {
+  quantity?: string;
+  department?: string;
+  value?: string;
+  sku?: string;
+  reference?: string;
+  date?: string;
+  destination?: string;
+  status?: string;
+  comment?: string;
+  hypothesis?: string;
+  action?: string;
+  run?: string;
+}
+
+export const FILE_COLUMN_SPEC: Record<string, ColumnSpec> = {
+  // Stock On Hand / MB52: quantité on-hand = K (Unrestricted), département = D, SKU détecté.
+  stock: { quantity: "K", department: "D", sku: "" },
+  // VL06I Transit: quantité = N (Delivery Quantity), département = AA (Hierarchy Node).
+  transit: { quantity: "N", department: "AA", sku: "", reference: "", date: "" },
+  // CLC SAP / Sales: département = C, quantité vendue = R (Quantity Unit of Entry),
+  // valeur = U (Sales Value Unit), SKU détecté.
+  sales: { quantity: "R", department: "C", value: "U", sku: "" },
+  // Adjust SAP / Variances: département = C, quantité = R, valeur = U, SKU détecté.
+  adjust: { quantity: "R", department: "C", value: "U", sku: "" },
+  // VL06I In / Inbound: quantité = N, département = AA (Hierarchy Node 3).
+  inbound: { quantity: "N", department: "AA", sku: "", reference: "", date: "" },
+  // Outbound: quantité = P (Delivery Quantity), département = AB (Hierarchy Node 3).
+  outbound: { quantity: "P", department: "AB", sku: "", reference: "", date: "" },
+  // Consignment: quantité = T (Quantity). Department not certain by default.
+  consignment: { quantity: "T", sku: "" },
+  // Reservations: quantité = T (Quantity). Department not certain by default.
+  reservations: { quantity: "T", sku: "" },
+  // Informations terrain: free-form. No fixed columns — mapping required when unrecognized.
+  terrain: {},
+};
+
+/** Whether the department column is identified with certainty (no guessing). */
+export function departmentIsCertain(fileType: string | null, mapping: Record<string, string>): boolean {
+  if (!fileType) return false;
+  if (mapping.department || mapping.departmentName) return true;
+  const spec = FILE_COLUMN_SPEC[fileType];
+  return Boolean(spec?.department);
+}
+
+/**
+ * Resolve a canonical field value from a raw row.
+ * Priority: saved mapping (header name) > column-letter spec > nothing.
+ * Never invents a value: if neither is present, returns undefined.
+ */
+function resolveField(
+  raw: Record<string, unknown>,
+  field: keyof ColumnSpec,
   mapping: Record<string, string>,
-  fallbackDeptId = "UNKNOWN"
-): NormalizedRow[] {
-  const src = (field: string) => mapping[field];
-  return rows.map((raw) => {
-    const deptRaw = toStr(raw[src("department") as string] ?? raw["DEPT"] ?? "");
-    const deptNameRaw = toStr(raw[src("departmentName") as string] ?? raw["DEPT_NAME"] ?? "");
-    const deptId = deptRaw || fallbackDeptId;
-    return {
+  spec: ColumnSpec | undefined,
+  headersOrdered: string[]
+): unknown {
+  const mappedCol = mapping[field as string];
+  if (mappedCol && raw[mappedCol] !== undefined) return raw[mappedCol];
+  if (spec && spec[field]) {
+    const idx = columnLetterToIndex(spec[field]!);
+    if (idx >= 0) {
+      const keys = Object.keys(raw);
+      if (idx < keys.length) {
+        const key = keys[idx];
+        if (raw[key] !== undefined) return raw[key];
+      }
+      // Fallback: header at positional index.
+      if (idx < headersOrdered.length) {
+        const h = headersOrdered[idx];
+        if (h && raw[h] !== undefined) return raw[h];
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Normalize rows for a specific file type, applying the column-letter spec
+ * as a fallback. Tracks rejections (rows missing an indispensable field).
+ */
+export interface NormalizeResult {
+  rows: NormalizedRow[];
+  accepted: number;
+  rejected: number;
+  reasons: RejectReason[];
+}
+
+export function normalizeRowsForType(
+  rawRows: Record<string, unknown>[],
+  mapping: Record<string, string>,
+  fileType: string,
+  headersOrdered: string[]
+): NormalizeResult {
+  const spec = FILE_COLUMN_SPEC[fileType];
+  const out: NormalizedRow[] = [];
+  const reasonCounts = new Map<string, number>();
+  let accepted = 0;
+
+  const isTotalQuantityType = ["stock", "transit", "inbound", "outbound", "consignment", "reservations"].includes(fileType);
+  const needsValue = ["sales", "adjust"].includes(fileType);
+
+  for (const raw of rawRows) {
+    const deptRaw = toStr(
+      resolveField(raw, "department", mapping, spec, headersOrdered)
+    );
+    const deptNameRaw = toStr(
+      resolveField(raw, "departmentName", mapping, spec, headersOrdered)
+    );
+    const qtyRaw = resolveField(raw, "quantity", mapping, spec, headersOrdered);
+    const qty = toNumber(qtyRaw);
+    const valueRaw = resolveField(raw, "value", mapping, spec, headersOrdered);
+    const value = toNumber(valueRaw);
+
+    // Indispensable fields validation.
+    const missing: string[] = [];
+    if (qtyRaw === undefined || qtyRaw === "" || qty === 0 && isTotalQuantityType && String(qtyRaw).trim() === "") {
+      // Only reject on truly empty quantity, not zero (zero is valid for some SAP rows).
+      if (qtyRaw === undefined || qtyRaw === "") missing.push("quantité manquante");
+    }
+    if (needsValue && (valueRaw === undefined || valueRaw === "")) {
+      missing.push("valeur manquante");
+    }
+
+    const requiresDept = ["stock", "transit", "sales", "adjust", "inbound", "outbound"].includes(fileType);
+    if (requiresDept && !deptRaw) {
+      // Don't reject outright — flag as "À mapper" per spec. Counted separately.
+      missing.push("département manquant (à mapper)");
+    }
+
+    if (missing.length > 0) {
+      for (const r of missing) reasonCounts.set(r, (reasonCounts.get(r) ?? 0) + 1);
+      // Still include rows with missing department under "À mapper" bucket,
+      // but reject rows missing quantity/value entirely.
+      if (missing.some((m) => m.includes("quantité") || m.includes("valeur"))) {
+        continue;
+      }
+    }
+
+    const deptId = deptRaw || "À mapper";
+    out.push({
       deptId,
       deptName: deptNameRaw || deptId,
-      sku: toStr(raw[src("sku") as string]) || undefined,
-      reference: toStr(raw[src("reference") as string]) || undefined,
-      quantity: toNumber(raw[src("quantity") as string]),
-      value: toNumber(raw[src("value") as string]),
-      date: toDate(raw[src("date") as string]),
-      status: toStr(raw[src("status") as string]) || undefined,
-      destination: toStr(raw[src("destination") as string]) || undefined,
-      recipient: toStr(raw[src("recipient") as string]) || undefined,
-      comment: toStr(raw[src("comment") as string]) || undefined,
-      priority: toStr(raw[src("priority") as string]) || undefined,
-      barcode: toStr(raw[src("barcode") as string]) || undefined,
-      name: toStr(raw[src("name") as string]) || undefined,
-      description: toStr(raw[src("description") as string]) || undefined,
-      location: toStr(raw[src("location") as string]) || undefined,
-    };
-  });
+      sku: toStr(resolveField(raw, "sku", mapping, spec, headersOrdered)) || undefined,
+      reference: toStr(resolveField(raw, "reference", mapping, spec, headersOrdered)) || undefined,
+      quantity: qty,
+      value,
+      date: toDate(resolveField(raw, "date", mapping, spec, headersOrdered)),
+      status: toStr(resolveField(raw, "status", mapping, spec, headersOrdered)) || undefined,
+      destination: toStr(resolveField(raw, "destination", mapping, spec, headersOrdered)) || undefined,
+      recipient: toStr(resolveField(raw, "recipient", mapping, spec, headersOrdered)) || undefined,
+      comment: toStr(resolveField(raw, "comment", mapping, spec, headersOrdered)) || undefined,
+      priority: toStr(resolveField(raw, "priority", mapping, spec, headersOrdered)) || undefined,
+      barcode: toStr(resolveField(raw, "barcode", mapping, spec, headersOrdered)) || undefined,
+      name: toStr(resolveField(raw, "name", mapping, spec, headersOrdered)) || undefined,
+      description: toStr(resolveField(raw, "description", mapping, spec, headersOrdered)) || undefined,
+      location: toStr(resolveField(raw, "location", mapping, spec, headersOrdered)) || undefined,
+    });
+    accepted += 1;
+  }
+
+  const reasons: RejectReason[] = [...reasonCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([reason, count]) => ({ reason, count }));
+
+  return {
+    rows: out,
+    accepted,
+    rejected: rawRows.length - accepted,
+    reasons,
+  };
 }
 
 /* ------------------------------------------------------------------ */
