@@ -100,6 +100,22 @@ export function HomePage({
     [summary]
   );
 
+  // Ajustements en moins : départements dont adjust_value < 0 (réduisent la valeur des ventes).
+  const downwardAdjustments = useMemo(
+    () => [...summary]
+      .filter((r) => r.adjust_value < 0)
+      .sort((a, b) => a.adjust_value - b.adjust_value)
+      .slice(0, 14)
+      .map((r) => ({
+        name: r.dept_id,
+        salesValue: Math.round(r.sales_value),
+        adjustValue: Math.round(r.adjust_value),
+        net: Math.round(r.sales_value + r.adjust_value),
+        risk: r.risk,
+      })),
+    [summary]
+  );
+
   return (
     <div ref={captureRef} className="space-y-7">
       <SectionHeader
@@ -180,6 +196,38 @@ export function HomePage({
             </BarChart>
           </ResponsiveContainer>
         </div>
+      </div>
+
+      {/* Downward adjustments chart */}
+      <div className="card p-4">
+        <div className="flex items-center justify-between mb-1">
+          <div>
+            <h3 className="text-sm font-semibold text-graphite-900">Ajustements en moins par département</h3>
+            <p className="text-xs text-graphite-500">Variance négative entre valeur des ventes et tableau — top 14</p>
+          </div>
+          <div className="flex items-center gap-3 text-[11px] text-graphite-500">
+            <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-2.5 rounded-sm bg-[#3a6a48]" /> Ventes</span>
+            <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-2.5 rounded-sm bg-[#b54848]" /> Ajustement</span>
+            <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-2.5 rounded-sm bg-[#8a8d92]" /> Net</span>
+          </div>
+        </div>
+        {downwardAdjustments.length > 0 ? (
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart data={downwardAdjustments} layout="vertical" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#eceef1" horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 10, fill: "#677079" }} tickFormatter={(v) => fmtEur(Number(v))} />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "#677079" }} width={48} />
+              <Tooltip cursor={{ fill: "#f6f7f8" }} formatter={(v) => fmtEur(Number(v))} />
+              <Bar dataKey="salesValue" name="Ventes" fill="#3a6a48" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="adjustValue" name="Ajustement" fill="#b54848" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="net" name="Net" fill="#8a8d92" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex items-center justify-center h-32 text-sm text-graphite-400">
+            Aucun ajustement en moins détecté.
+          </div>
+        )}
       </div>
 
       {/* Department table 100-945 */}
