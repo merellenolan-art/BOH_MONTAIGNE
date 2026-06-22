@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Receipt, RefreshCw, Search, AlertTriangle, CheckCircle2, Scale,
 } from "lucide-react";
@@ -6,6 +6,7 @@ import { SectionHeader, EmptyState, Spinner } from "../components/ui";
 import { useDashboardExports } from "../lib/actions";
 import { demoOracleSap, fmtEur, fmtNum } from "../lib/engine";
 import type { StoreState } from "../lib/useStore";
+import { ShareDashboard } from "../components/ShareDashboard";
 import type { View } from "../components/Layout";
 
 export function OracleDashboard({
@@ -19,6 +20,7 @@ export function OracleDashboard({
 }) {
   const { loading, refresh } = store;
   const all = useMemo(() => demoOracleSap(), []);
+  const captureRef = useRef<HTMLDivElement>(null);
   const { exportTable, copyWhatsApp } = useDashboardExports();
 
   const [search, setSearch] = useState("");
@@ -60,7 +62,7 @@ export function OracleDashboard({
   const good = ecartValueGlobal === 0;
 
   return (
-    <div className="space-y-6">
+    <div ref={captureRef} className="space-y-6">
       <SectionHeader
         eyebrow="Comparateur caisse"
         title="Caisse / Oracle"
@@ -179,6 +181,13 @@ export function OracleDashboard({
           </div>
         </div>
       )}
+      <ShareDashboard
+        dashboardName="Caisse / Oracle"
+        kpis={waSummary}
+        alerts={ecartCount > 0 ? [`${ecartCount} SKU(s) en écart`] : []}
+        captureRef={captureRef}
+        notify={notify}
+      />
     </div>
   );
 }

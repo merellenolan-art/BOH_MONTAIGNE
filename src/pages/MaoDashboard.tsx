@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   ShoppingBag, RefreshCw, Search, AlertTriangle, Clock,
 } from "lucide-react";
 import { SectionHeader, KpiCard, EmptyState, Spinner, RiskTag } from "../components/ui";
 import { useDashboardExports } from "../lib/actions";
 import { demoMao, fmtNum } from "../lib/engine";
+import { ShareDashboard } from "../components/ShareDashboard";
 import type { StoreState } from "../lib/useStore";
 import type { View } from "../components/Layout";
 import type { RiskLevel } from "../types";
@@ -21,6 +22,7 @@ export function MaoDashboard({
   const { loading, refresh } = store;
   // Demo extraction already filtered to Montaigne-bound orders.
   const all = useMemo(() => demoMao(), []);
+  const captureRef = useRef<HTMLDivElement>(null);
   const { exportTable, copyWhatsApp } = useDashboardExports();
 
   const toPrepare = all.filter((m) => m.status === "À préparer").length;
@@ -53,7 +55,7 @@ export function MaoDashboard({
   ];
 
   return (
-    <div className="space-y-6">
+    <div ref={captureRef} className="space-y-6">
       <SectionHeader
         eyebrow="E-commerce"
         title="E-commerce / MAO"
@@ -135,6 +137,13 @@ export function MaoDashboard({
           </div>
         </div>
       )}
+      <ShareDashboard
+        dashboardName="E-commerce / MAO"
+        kpis={waSummary}
+        alerts={oldOrders > 0 ? [`${oldOrders} commande(s) de plus de 3 jours`] : []}
+        captureRef={captureRef}
+        notify={notify}
+      />
     </div>
   );
 }

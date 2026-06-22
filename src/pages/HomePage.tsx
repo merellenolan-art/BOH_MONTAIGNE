@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from "recharts";
@@ -10,6 +10,7 @@ import {
 import { SectionHeader, KpiCard, Spinner, RiskTag } from "../components/ui";
 import { FilterBar, filterRows, sumField, useFilters } from "../components/dashboard";
 import { DestinationSummaryCard } from "../components/DestinationSummary";
+import { ShareDashboard } from "../components/ShareDashboard";
 import type { View } from "../components/Layout";
 import type { StoreState } from "../lib/useStore";
 import { useViewSummary } from "../lib/useStore";
@@ -31,6 +32,7 @@ export function HomePage({
   notify: (m: string) => void;
 }) {
   const { imports, loading, lastUpdated, refresh } = store;
+  const captureRef = useRef<HTMLDivElement>(null);
   const summary = useViewSummary(store);
   const { filter, ...setters } = useFilters();
   const rows = useMemo(() => filterRows(summary, filter), [summary, filter]);
@@ -99,7 +101,7 @@ export function HomePage({
   );
 
   return (
-    <div className="space-y-7">
+    <div ref={captureRef} className="space-y-7">
       <SectionHeader
         title="Centre de pilotage"
         subtitle="Tableau de bord opérationnel Back of House — boutique Montaigne"
@@ -270,6 +272,13 @@ export function HomePage({
           </button>
         </div>
       )}
+      <ShareDashboard
+        dashboardName="BOH Montaigne — Centre de pilotage"
+        kpis={waSummary}
+        alerts={[]}
+        captureRef={captureRef}
+        notify={notify}
+      />
     </div>
   );
 }

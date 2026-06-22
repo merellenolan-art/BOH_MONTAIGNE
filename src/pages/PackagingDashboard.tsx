@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Package, LayoutGrid, List, AlertTriangle, RefreshCw, Search,
 } from "lucide-react";
@@ -6,6 +6,7 @@ import { SectionHeader, EmptyState, Spinner, RiskTag } from "../components/ui";
 import { useDashboardExports } from "../lib/actions";
 import { demoPackaging, fmtNum } from "../lib/engine";
 import type { StoreState } from "../lib/useStore";
+import { ShareDashboard } from "../components/ShareDashboard";
 import type { PackagingItem, RiskLevel } from "../types";
 
 export function PackagingDashboard({
@@ -32,6 +33,7 @@ export function PackagingDashboard({
     return true;
   }), [all, showAlertsOnly, search]);
 
+  const captureRef = useRef<HTMLDivElement>(null);
   const { exportTable, copyWhatsApp } = useDashboardExports();
   const alertCount = all.filter((p) => deriveRisk(p).risk !== "ok").length;
 
@@ -49,7 +51,7 @@ export function PackagingDashboard({
   ];
 
   return (
-    <div className="space-y-6">
+    <div ref={captureRef} className="space-y-6">
       <SectionHeader
         eyebrow="Packaging"
         title="Packaging Dashboard"
@@ -143,6 +145,13 @@ export function PackagingDashboard({
           </div>
         </div>
       )}
+      <ShareDashboard
+        dashboardName="Packaging Dashboard"
+        kpis={waSummary}
+        alerts={alertCount > 0 ? [`${alertCount} alerte(s) de rupture`] : []}
+        captureRef={captureRef}
+        notify={notify}
+      />
     </div>
   );
 }

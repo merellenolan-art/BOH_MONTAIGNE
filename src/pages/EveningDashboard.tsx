@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import {
   Moon, ArrowDownToLine, ArrowUpFromLine, Send, ShoppingBag, Package,
   RefreshCw, Search,
@@ -6,6 +6,7 @@ import {
 import { SectionHeader, KpiCard, Spinner, ZoneTag } from "../components/ui";
 import { useDashboardExports } from "../lib/actions";
 import { demoEveningFlows, fmtEur, fmtNum } from "../lib/engine";
+import { ShareDashboard } from "../components/ShareDashboard";
 import type { StoreState } from "../lib/useStore";
 import type { View } from "../components/Layout";
 import type { DestinationZone } from "../types";
@@ -21,6 +22,7 @@ export function EveningDashboard({
 }) {
   const { loading, refresh } = store;
   const flows = useMemo(() => demoEveningFlows(), []);
+  const captureRef = useRef<HTMLDivElement>(null);
   const { exportTable, copyWhatsApp } = useDashboardExports();
 
   const receivedToday = flows.filter((f) => f.type === "Réception");
@@ -53,7 +55,7 @@ export function EveningDashboard({
   ];
 
   return (
-    <div className="space-y-6">
+    <div ref={captureRef} className="space-y-6">
       <SectionHeader
         eyebrow="Evening Report"
         title="Evening Dashboard"
@@ -142,6 +144,13 @@ export function EveningDashboard({
         </p>
         <button className="btn-ghost text-sm" onClick={() => setView("mao")}>Voir MAO →</button>
       </div>
+      <ShareDashboard
+        dashboardName="Evening Dashboard"
+        kpis={waSummary}
+        alerts={[]}
+        captureRef={captureRef}
+        notify={notify}
+      />
     </div>
   );
 }

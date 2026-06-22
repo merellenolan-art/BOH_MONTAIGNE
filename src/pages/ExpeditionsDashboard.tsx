@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Truck, RefreshCw, Search, AlertTriangle, AlertOctagon,
 } from "lucide-react";
 import { SectionHeader, KpiCard, EmptyState, Spinner, RiskTag, ZoneTag } from "../components/ui";
 import { useDashboardExports } from "../lib/actions";
 import { demoExpeditions, fmtEur, fmtNum } from "../lib/engine";
+import { ShareDashboard } from "../components/ShareDashboard";
 import type { StoreState } from "../lib/useStore";
 import type { View } from "../components/Layout";
 import type { DestinationZone, RiskLevel } from "../types";
@@ -20,6 +21,7 @@ export function ExpeditionsDashboard({
 }) {
   const { loading, refresh } = store;
   const all = useMemo(() => demoExpeditions(), []);
+  const captureRef = useRef<HTMLDivElement>(null);
   const { exportTable, copyWhatsApp } = useDashboardExports();
 
   const today = useMemo(() => all.slice(0, 5), [all]); // top 5 = "du jour" for demo
@@ -57,7 +59,7 @@ export function ExpeditionsDashboard({
   const destinations = useMemo(() => [...new Set(all.map((e) => e.destination))].sort(), [all]);
 
   return (
-    <div className="space-y-6">
+    <div ref={captureRef} className="space-y-6">
       <SectionHeader
         eyebrow="FastShipment"
         title="Expéditions"
@@ -148,6 +150,13 @@ export function ExpeditionsDashboard({
           </div>
         </div>
       )}
+      <ShareDashboard
+        dashboardName="Expéditions"
+        kpis={waSummary}
+        alerts={blocked.length > 0 ? [`${blocked.length} expédition(s) bloquée(s)`] : []}
+        captureRef={captureRef}
+        notify={notify}
+      />
     </div>
   );
 }

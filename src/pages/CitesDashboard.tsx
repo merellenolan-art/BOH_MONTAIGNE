@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Leaf, Printer, FileCheck, FileX, RefreshCw, Search, X, ShieldAlert,
 } from "lucide-react";
@@ -8,6 +8,7 @@ import { demoCites, fmtEur, fmtNum } from "../lib/engine";
 import { upsertCitesItem } from "../lib/data";
 import type { StoreState } from "../lib/useStore";
 import type { CitesItem, DossierStatus } from "../types";
+import { ShareDashboard } from "../components/ShareDashboard";
 
 const STATUS_META: Record<DossierStatus, { label: string; cls: string }> = {
   todo: { label: "À faire", cls: "bg-rose-50 text-rose-700" },
@@ -29,6 +30,7 @@ export function CitesDashboard({
   const [signaletique, setSignaletique] = useState<CitesItem | null>(null);
 
   const all = useMemo(() => citesItems.length ? citesItems : demoCites(), [citesItems]);
+  const captureRef = useRef<HTMLDivElement>(null);
   const { exportTable } = useDashboardExports();
 
   const items = useMemo(() => all.filter((c) => {
@@ -54,7 +56,7 @@ export function CitesDashboard({
   }
 
   return (
-    <div className="space-y-6">
+    <div ref={captureRef} className="space-y-6">
       <SectionHeader
         eyebrow="Réglementation"
         title="CITES"
@@ -134,6 +136,18 @@ export function CitesDashboard({
       {signaletique && (
         <SignaletiqueModal item={signaletique} onClose={() => setSignaletique(null)} notify={notify} />
       )}
+      <ShareDashboard
+        dashboardName="CITES"
+        kpis={[
+          { label: "Pièces", value: fmtNum(totalPieces) },
+          { label: "Valeur", value: fmtEur(totalValue) },
+          { label: "En cours", value: fmtNum(inProgress) },
+          { label: "Incomplets", value: fmtNum(incomplete) },
+        ]}
+        alerts={incomplete > 0 ? [`${incomplete} dossier(s) incomplet(s)`] : []}
+        captureRef={captureRef}
+        notify={notify}
+      />
     </div>
   );
 }

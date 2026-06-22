@@ -1145,3 +1145,240 @@ export function demoKpis(): KpiOverride[] {
     { key: "saturation_rate", label: "Taux de saturation", value_numeric: 0, unit: "%", updated_at: "", updated_by: "" },
   ];
 }
+
+/* ------------------------------------------------------------------ */
+/* Morning dashboard — VL06I Transit & MB52 Stock On Hand              */
+/* ------------------------------------------------------------------ */
+
+/** Normalize a header string for fuzzy matching: lowercase, strip accents,
+ *  collapse spaces/underscores/dashes. */
+function normalizeHeaderKey(s: string): string {
+  return String(s ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\s_\-/]+/g, " ")
+    .trim();
+}
+
+/** VL06I Transit signature headers (normalized substrings to match). */
+const VL06I_SIGNALS = [
+  "delivery date",     // B
+  "external delivery", // E
+  "delivery quantity", // N
+  "hierarchy node",   // AA
+  "material",          // K
+  "article",           // L
+  "description",       // M
+];
+
+/** MB52 Stock On Hand signature headers. */
+const MB52_SIGNALS = [
+  "unrestricted",     // K
+  "material",          // B
+  "department",        // D
+  "description",       // C
+];
+
+/** Detect whether a header set matches VL06I Transit. */
+export function isVL06ITransit(headers: string[]): boolean {
+  const norm = headers.map(normalizeHeaderKey).join(" | ");
+  let hits = 0;
+  for (const sig of VL06I_SIGNALS) if (norm.includes(sig)) hits += 1;
+  return hits >= 4;
+}
+
+/** Detect whether a header set matches MB52 Stock On Hand. */
+export function isMB52Stock(headers: string[]): boolean {
+  const norm = headers.map(normalizeHeaderKey).join(" | ");
+  let hits = 0;
+  for (const sig of MB52_SIGNALS) if (norm.includes(sig)) hits += 1;
+  return hits >= 3;
+}
+
+/** Resolve a column value by Excel letter (A=0, B=1, …, AA=26) from a raw row. */
+function getByLetter(row: Record<string, unknown>, letter: string): unknown {
+  const idx = columnLetterToIndex(letter);
+  if (idx < 0) return undefined;
+  const keys = Object.keys(row);
+  if (idx < keys.length) return row[keys[idx]];
+  return undefined;
+}
+
+/** Find the best matching header for a canonical field given expected keywords. */
+function findHeader(headers: string[], keywords: string[]): string | undefined {
+  const norm = headers.map((h) => ({ raw: h, n: normalizeHeaderKey(h) }));
+  for (const kw of keywords) {
+    const match = norm.find((h) => h.n === kw || h.n.includes(kw));
+    if (match) return match.raw;
+  }
+  return undefined;
+}
+
+export interface TransitRow {
+  date: string;
+  dateValue: Date | null;
+  reference: string;
+  sku: string;
+  style: string;
+  description: string;
+  quantity: number;
+  department: string;
+  aging: number;
+  risk: RiskLevel;
+}
+
+export interface NegativeStockRow {
+  style: string;
+  sku: string;
+  description: string;
+  department: string;
+  quantity: number;
+}
+
+/** Convert an Excel serial date number to a JS Date (timezone-agnostic). */
+export function excelDateToDate(value: unknown): Date | null {
+  if (value === null || value === undefined || value === "") return null;
+  const num = typeof value === "number" ? value : Number(value);
+  if (!isNaN(num) && num > 0 && num < 100000) {
+    const epoch = Date.UTC(1899, 11, 30);
+    const ms = epoch + num * 86400000;
+    return new Date(ms);
+  }
+  const s = String(value).trim();
+  const parsed = new Date(s);
+  if (!isNaN(parsed.getTime())) return parsed;
+  if (/^\d{2}[\/.\-]\d{2}[\/.\-]\d{2,4}$/.test(s)) {
+    const parts = s.split(/[\/.\-]/);
+    const dd = parseInt(parts[0], 10);
+    const mm = parseInt(parts[1], 10) - 1;
+    let yyyy = parseInt(parts[2], 10);
+    if (yyyy < 100) yyyy += 2000;
+    return new Date(Date.UTC(yyyy, mm, dd));
+  }
+  return null;
+}
+
+/** Compute calendar age in days, Europe/Paris timezone-aware. */
+export function transitAging(dateValue: Date | null, now: Date = new Date()): number {
+  if (!dateValue) return 0;
+  const parisNow = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Paris" }));
+  const parisDate = new Date(dateValue.toLocaleString("en-US", { timeZone: "Europe/Paris" }));
+  const ms = parisNow.getTime() - parisDate.getTime();
+  return Math.floor(ms / 86400000);
+}
+
+export function transitRisk(aging: number): RiskLevel {
+  if (aging >= 8) return "action";
+  if (aging >= 3) return "attention";
+  return "ok";
+}
+
+const VL06I_KEYWORDS: Record<string, string[]> = {
+  date: ["delivery date", "date"],
+  reference: ["external delivery", "delivery"],
+  sku: ["material", "article", "sku"],
+  style: ["style", "article"],
+  description: ["description"],
+  quantity: ["delivery quantity", "quantity"],
+  department: ["hierarchy node", "department"],
+};
+
+/** Extract transit rows from a VL06I import, using header keywords then column letters. */
+export function extractTransitRows(imp: ImportRecord): TransitRow[] {
+  if (!imp.rows || imp.rows.length === 0) return [];
+  const headers = Object.values(imp.headers ?? {})[0] ?? Object.keys(imp.rows[0] ?? {});
+  const cols: Record<string, string | undefined> = {};
+  for (const k of Object.keys(VL06I_KEYWORDS)) {
+    cols[k] = findHeader(headers, VL06I_KEYWORDS[k]);
+  }
+  const out: TransitRow[] = [];
+  for (const raw of imp.rows) {
+    // Header-name lookup first (sheet_to_json keys by header value), then column-letter fallback.
+    const resolve = (field: string, letter: string) => {
+      const h = cols[field];
+      if (h && raw[h] !== undefined && raw[h] !== "") return raw[h];
+      return getByLetter(raw, letter);
+    };
+    const dateRaw = resolve("date", "B");
+    const refRaw = resolve("reference", "E");
+    const skuRaw = resolve("sku", "K");
+    const styleRaw = resolve("style", "L");
+    const descRaw = resolve("description", "M");
+    const qtyRaw = resolve("quantity", "N");
+    const deptRaw = resolve("department", "AA");
+    const qty = toNumber(qtyRaw);
+    if (qtyRaw === undefined || qtyRaw === "" || isNaN(qty)) continue;
+    const dateValue = excelDateToDate(dateRaw);
+    const aging = transitAging(dateValue);
+    out.push({
+      date: dateValue ? dateValue.toLocaleDateString("fr-FR") : String(dateRaw ?? ""),
+      dateValue,
+      reference: toStr(refRaw),
+      sku: toStr(skuRaw),
+      style: toStr(styleRaw),
+      description: toStr(descRaw),
+      quantity: qty,
+      department: toStr(deptRaw) || "À mapper",
+      aging,
+      risk: transitRisk(aging),
+    });
+  }
+  return out;
+}
+
+const MB52_KEYWORDS: Record<string, string[]> = {
+  style: ["style"],
+  sku: ["material", "article", "sku"],
+  description: ["description"],
+  department: ["department"],
+  quantity: ["unrestricted"],
+};
+
+/** Extract negative stock rows (K < 0) from an MB52 import. */
+export function extractNegativeStockRows(imp: ImportRecord): NegativeStockRow[] {
+  if (!imp.rows || imp.rows.length === 0) return [];
+  const headers = Object.values(imp.headers ?? {})[0] ?? Object.keys(imp.rows[0] ?? {});
+  const cols: Record<string, string | undefined> = {};
+  for (const k of Object.keys(MB52_KEYWORDS)) {
+    cols[k] = findHeader(headers, MB52_KEYWORDS[k]);
+  }
+  const out: NegativeStockRow[] = [];
+  for (const raw of imp.rows) {
+    const resolve = (field: string, letter: string) => {
+      const h = cols[field];
+      if (h && raw[h] !== undefined && raw[h] !== "") return raw[h];
+      return getByLetter(raw, letter);
+    };
+    const qtyRaw = resolve("quantity", "K");
+    const qty = toNumber(qtyRaw);
+    if (isNaN(qty) || qty >= 0) continue;
+    const styleRaw = resolve("style", "A");
+    const skuRaw = resolve("sku", "B");
+    const descRaw = resolve("description", "C");
+    const deptRaw = resolve("department", "D");
+    out.push({
+      style: toStr(styleRaw),
+      sku: toStr(skuRaw),
+      description: toStr(descRaw),
+      department: toStr(deptRaw) || "À mapper",
+      quantity: qty,
+    });
+  }
+  return out;
+}
+
+/** Compute the exact sum of Delivery Quantity (column N). */
+export function sumDeliveryQuantity(imp: ImportRecord): number {
+  return extractTransitRows(imp).reduce((a, r) => a + r.quantity, 0);
+}
+
+/** Count strictly negative rows (K < 0). */
+export function countNegativeStock(imp: ImportRecord): number {
+  return extractNegativeStockRows(imp).length;
+}
+
+/** Count transit rows aged >= 8 days. */
+export function countAgedTransits(imp: ImportRecord): number {
+  return extractTransitRows(imp).filter((r) => r.aging >= 8).length;
+}
