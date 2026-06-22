@@ -5,6 +5,7 @@ import {
   fetchDeptNotes,
   fetchFileTypes,
   fetchImports,
+  fetchIndicatorSources,
   fetchKpiOverrides,
   fetchMappings,
   fetchPackagingItems,
@@ -19,6 +20,7 @@ import type {
   DeptSummaryRow,
   FileType,
   ImportRecord,
+  IndicatorSource,
   KpiOverride,
   MappingRecord,
   PackagingItem,
@@ -37,6 +39,7 @@ export interface StoreState {
   kpis: KpiOverride[];
   citesItems: CitesItem[];
   packagingItems: PackagingItem[];
+  indicatorSources: IndicatorSource[];
   loading: boolean;
   error: string | null;
   lastUpdated: Date | null;
@@ -53,6 +56,7 @@ export function useStore(): StoreState {
   const [kpis, setKpis] = useState<KpiOverride[]>([]);
   const [citesItems, setCitesItems] = useState<CitesItem[]>([]);
   const [packagingItems, setPackagingItems] = useState<PackagingItem[]>([]);
+  const [indicatorSources, setIndicatorSources] = useState<IndicatorSource[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -61,7 +65,7 @@ export function useStore(): StoreState {
     setLoading(true);
     setError(null);
     try {
-      const [ft, imp, map, sum, depts, notesData, kpisData, cites, packaging] = await Promise.all([
+      const [ft, imp, map, sum, depts, notesData, kpisData, cites, packaging, srcs] = await Promise.all([
         fetchFileTypes(),
         fetchImports(),
         fetchMappings(),
@@ -71,6 +75,7 @@ export function useStore(): StoreState {
         fetchKpiOverrides(),
         fetchCitesItems(),
         fetchPackagingItems(),
+        fetchIndicatorSources(),
       ]);
       setFileTypes(ft);
       setImports(imp);
@@ -81,6 +86,7 @@ export function useStore(): StoreState {
       setKpis(kpisData);
       setCitesItems(cites);
       setPackagingItems(packaging);
+      setIndicatorSources(srcs);
       setLastUpdated(new Date());
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -103,6 +109,7 @@ export function useStore(): StoreState {
     kpis,
     citesItems,
     packagingItems,
+    indicatorSources,
     loading,
     error,
     lastUpdated,

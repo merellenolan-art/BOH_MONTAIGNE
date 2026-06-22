@@ -1,9 +1,11 @@
 import * as XLSX from "xlsx";
 import { supabase, DB } from "./supabase";
-import type { FileType, ImportRecord, MappingRecord } from "../types";
+import type { FileType, ImportRecord, IndicatorSource, MappingRecord } from "../types";
 import {
+  FILE_COLUMN_SPEC,
   computeImportStatus,
   detectFileType,
+  normalizeRowsForType,
   normalizeHeaders,
   suggestMapping,
 } from "./engine";
@@ -91,6 +93,14 @@ export async function fetchSummary() {
   return data ?? [];
 }
 
+export async function fetchIndicatorSources(): Promise<IndicatorSource[]> {
+  const { data, error } = await supabase
+    .from(DB.indicatorSources)
+    .select("*");
+  if (error) throw error;
+  return (data ?? []) as unknown as IndicatorSource[];
+}
+
 export interface SaveImportInput {
   fileName: string;
   sheetNames: string[];
@@ -124,12 +134,32 @@ export async function saveImport(
     savedMapping
   );
 
+  // Compute rejection stats + preview using column-letter-aware normalization.
+  const headersOrdered = Array.from(new Set(flatHeaders));
+  const hasSpec = detectedType ? Boolean(FILE_COLUMN_SPEC[detectedType]) : false;
+  let accepted = 0;
+  let rejected = 0;
+  let reasons: { reason: string; count: number }[] = [];
+  if (hasSpec && detectedType) {
+    const norm = normalizeRowsForType(input.rows, savedMapping, detectedType, headersOrdered);
+    accepted = norm.accepted;
+    rejected = norm.rejected;
+    reasons = norm.reasons;
+  } else {
+    accepted = input.rows.length;
+  }
+  const preview_rows = input.rows.slice(0, 5);
+
   const payload = {
     file_type: detectedType,
     file_name: input.fileName,
     sheet_names: input.sheetNames,
     headers: input.headers,
     row_count: input.rows.length,
+    accepted_count: accepted,
+    rejected_count: rejected,
+    rejected_reasons: reasons,
+    preview_rows,
     status,
     rows: input.rows,
   };
@@ -171,6 +201,17 @@ export async function saveImport(
 export async function deleteImport(id: string): Promise<void> {
   const { error } = await supabase.from(DB.imports).delete().eq("id", id);
   if (error) throw error;
+}
+
+/** Correct the detected type of an existing import, then recompute reject stats. */
+export async function updateImportType(
+  id: string,
+  newType: string,
+  fileType: FileType | undefined
+): Promise<void> {
+  void fileType;
+  await supabase.from(DB.imports).update({ file_type: newType }).eq("id", id);
+  await rebuildSummary();
 }
 
 export async function saveMapping(
@@ -280,6 +321,24 @@ export async function rebuildSummary(): Promise<void> {
     })),
   });
   await replaceSummaryRows(existing as unknown as Record<string, unknown>[]);
+
+  // Persist per-family indicator sources (file + date provenance).
+  const { buildIndicatorSources } = await import("./engine");
+  const sources = buildIndicatorSources(imports);
+  await supabase.from(DB.indicatorSources).delete().neq("family", "");
+  if (sources.length > 0) {
+    const rows = sources.map((s) => ({
+      family: s.family,
+      file_type: s.file_type,
+      file_name: s.file_name,
+      file_id: s.file_id,
+      imported_at: s.imported_at,
+      row_count: s.row_count,
+      has_data: s.has_data,
+    }));
+    const { error: srcErr } = await supabase.from(DB.indicatorSources).insert(rows);
+    if (srcErr) throw srcErr;
+  }
 }
 
 async function fetchSummaryRaw() {

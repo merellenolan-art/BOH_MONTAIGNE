@@ -59,6 +59,23 @@ export function MappingPanel({
     return Array.from(new Set(first));
   }, [imp]);
 
+  const samples = useMemo(() => {
+    const map = new Map<string, string[]>();
+    const rows = imp.preview_rows ?? imp.rows.slice(0, 50);
+    for (const h of headers) {
+      const vals: string[] = [];
+      for (const r of rows) {
+        const v = r[h];
+        if (v !== undefined && v !== null && String(v).trim() !== "") {
+          vals.push(String(v).trim().slice(0, 24));
+          if (vals.length >= 3) break;
+        }
+      }
+      map.set(h, vals);
+    }
+    return map;
+  }, [imp, headers]);
+
   const saved = useMemo(() => {
     const map: Partial<Record<CanonicalField, string>> = {};
     mappings.filter((m) => m.file_type === imp.file_type).forEach((m) => {
@@ -153,6 +170,17 @@ export function MappingPanel({
                   <option value="">— Aucune —</option>
                   {headers.map((h) => <option key={h} value={h}>{h}</option>)}
                 </select>
+                {chosen && (() => {
+                  const vals = samples.get(chosen) ?? [];
+                  if (vals.length === 0) return null;
+                  return (
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {vals.map((v, i) => (
+                        <code key={i} className="text-[10px] px-1.5 py-0.5 bg-graphite-100 text-graphite-500 rounded font-mono">{v}</code>
+                      ))}
+                    </div>
+                  );
+                })()}
                 {suggested && chosen === suggested && (
                   <p className="mt-1 text-[11px] text-house-600 flex items-center gap-1">
                     <Sparkles className="h-3 w-3" /> Suggestion automatique appliquée
@@ -169,7 +197,7 @@ export function MappingPanel({
         <div className="flex gap-2">
           <button className="btn-ghost" onClick={onClose}>Annuler</button>
           <button className="btn-primary" onClick={save} disabled={saving}>
-            {saving ? <Spinner className="h-4 w-4" /> : <Save className="h-4 w-4" />} {saving ? "Enregistrement…" : "Enregistrer"}
+            {saving ? <Spinner className="h-4 w-4" /> : <Save className="h-4 w-4" />} {saving ? "Import…" : "Valider et importer"}
           </button>
         </div>
       </div>

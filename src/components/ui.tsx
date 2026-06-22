@@ -54,12 +54,12 @@ export function KpiCard({
   icon?: ReactNode;
 }) {
   const accentMap: Record<string, string> = {
-    graphite: "bg-graphite-100 text-graphite-700",
-    house: "bg-house-50 text-house-700",
-    steel: "bg-steel-100 text-steel-600",
-    emerald: "bg-emerald-50 text-emerald-700",
-    amber: "bg-amber-50 text-amber-700",
-    rose: "bg-rose-50 text-rose-700",
+    graphite: "bg-graphite-100 text-graphite-500",
+    house: "bg-house-100 text-house-400",
+    steel: "bg-steel-100 text-steel-400",
+    emerald: "bg-emerald-900/40 text-emerald-300",
+    amber: "bg-amber-900/40 text-amber-300",
+    rose: "bg-rose-900/40 text-rose-300",
   };
   const barMap: Record<string, string> = {
     graphite: "bg-graphite-400",
@@ -125,10 +125,10 @@ export function Toast({ message, onClose }: { message: string; onClose: () => vo
 /** A destination zone badge. */
 export function ZoneTag({ zone }: { zone: "France" | "Europe" | "UK" | "Autre" }) {
   const map: Record<string, string> = {
-    France: "bg-house-50 text-house-700",
-    Europe: "bg-steel-100 text-steel-700",
-    UK: "bg-graphite-100 text-graphite-700",
-    Autre: "bg-graphite-100 text-graphite-500",
+    France: "bg-house-100 text-house-400",
+    Europe: "bg-steel-100 text-steel-400",
+    UK: "bg-graphite-100 text-graphite-500",
+    Autre: "bg-graphite-200 text-graphite-500",
   };
   return <span className={`tag ${map[zone]}`}>{zone}</span>;
 }

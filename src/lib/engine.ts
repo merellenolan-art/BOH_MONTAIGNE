@@ -298,6 +298,7 @@ export function columnLetterToIndex(letter: string): number {
 export interface ColumnSpec {
   quantity?: string;
   department?: string;
+  departmentName?: string;
   value?: string;
   sku?: string;
   reference?: string;
@@ -308,6 +309,12 @@ export interface ColumnSpec {
   hypothesis?: string;
   action?: string;
   run?: string;
+  recipient?: string;
+  priority?: string;
+  barcode?: string;
+  name?: string;
+  description?: string;
+  location?: string;
 }
 
 export const FILE_COLUMN_SPEC: Record<string, ColumnSpec> = {
@@ -489,24 +496,39 @@ const mappingMap = (mappings: MappingRecord[], fileType: string): Record<string,
   return out;
 };
 
+const normalizeImport = (imp: ImportRecord, mappings: MappingRecord[]): NormalizedRow[] => {
+  if (!imp.file_type || imp.rows.length === 0) return [];
+  const mapping = mappingMap(mappings, imp.file_type);
+  const headers = Object.values(imp.headers ?? {}).flat();
+  const ordered = headers.length > 0 ? Array.from(new Set(headers)) : Object.keys(imp.rows[0] ?? {});
+  const { rows } = normalizeRowsForType(imp.rows, mapping, imp.file_type, ordered);
+  return rows;
+};
+
 export function buildDepartmentSummary(input: BuildSummaryInput): DeptSummaryRow[] {
   const noteMap = new Map((input.notes ?? []).map((n) => [n.dept_code, n]));
   const lookup = new Map(input.existing.map((r) => [r.dept_id, r]));
   const deptRef = new Map((input.departments ?? []).map((d) => [d.sap_code ?? d.dept_code, d]));
 
+  // Normalize every import into per-type buckets using column-letter-aware logic.
   const byType = new Map<string, NormalizedRow[]>();
   for (const imp of input.imports) {
     if (!imp.file_type || imp.rows.length === 0) continue;
-    const mapping = mappingMap(input.mappings, imp.file_type);
-    const norm = normalizeRows(imp.rows, mapping);
+    if (!FILE_COLUMN_SPEC[imp.file_type]) continue; // ignore types without a spec
+    const norm = normalizeImport(imp, input.mappings);
     if (!byType.has(imp.file_type)) byType.set(imp.file_type, []);
     byType.get(imp.file_type)!.push(...norm);
   }
 
+  // Newness: SKUs present in Transit but absent from Stock On Hand.
+  const stockSkus = new Set<string>();
+  (byType.get("stock") ?? []).forEach((r) => { if (r.sku) stockSkus.add(r.sku); });
+  const transitRows = byType.get("transit") ?? [];
+  const newnessRows = transitRows.filter((r) => r.sku && !stockSkus.has(r.sku));
+  byType.set("newness", newnessRows);
+
   const departments = new Set<string>();
   byType.forEach((rows) => rows.forEach((r) => departments.add(r.deptId)));
-  // Also include seeded department reference rows even when no import
-  // references them, so the Home table shows the full 100–945 range.
   (input.departments ?? []).forEach((d) => {
     if (d.sap_code) departments.add(d.sap_code);
   });
@@ -534,7 +556,10 @@ export function buildDepartmentSummary(input: BuildSummaryInput): DeptSummaryRow
     const reservationsQty = sumQty(rowsOf("reservations"));
     const consignmentQty = sumQty(rowsOf("consignment"));
     const expeditionsQty = sumQty(rowsOf("expeditions"));
-    const newnessQty = inboundQty; // heuristic: inbound still open = newness
+    // Newness = transit SKUs not in stock, grouped by Transit department.
+    const newnessQty = newnessRows
+      .filter((r) => r.deptId === deptId)
+      .reduce((a, r) => a + (r.quantity ?? 0), 0);
 
     const isOpen = (r: NormalizedRow) => {
       const s = (r.status ?? "").toLowerCase();
@@ -571,6 +596,57 @@ export function buildDepartmentSummary(input: BuildSummaryInput): DeptSummaryRow
     });
   }
   return result;
+}
+
+/** Which file/type+date produced each indicator family on the Home dashboard. */
+export function buildIndicatorSources(
+  imports: ImportRecord[]
+): IndicatorSource[] {
+  // For each family, pick the most recent import of the matching type(s).
+  const families: { family: IndicatorSource["family"]; types: string[] }[] = [
+    { family: "stock", types: ["stock"] },
+    { family: "transit", types: ["transit"] },
+    { family: "newness", types: ["transit"] },
+    { family: "sales", types: ["sales"] },
+    { family: "adjust", types: ["adjust"] },
+    { family: "inbound", types: ["inbound"] },
+    { family: "outbound", types: ["outbound"] },
+    { family: "consignment", types: ["consignment"] },
+    { family: "reservations", types: ["reservations"] },
+    { family: "terrain", types: ["terrain"] },
+  ];
+  const out: IndicatorSource[] = [];
+  for (const f of families) {
+    const matches = imports
+      .filter((i) => i.file_type && f.types.includes(i.file_type))
+      .sort((a, b) => (b.imported_at ?? "").localeCompare(a.imported_at ?? ""));
+    const latest = matches[0];
+    out.push({
+      family: f.family,
+      file_type: latest?.file_type ?? null,
+      file_name: latest?.file_name ?? null,
+      file_id: latest?.id ?? null,
+      imported_at: latest?.imported_at ?? null,
+      row_count: latest?.row_count ?? 0,
+      has_data: Boolean(latest && (latest.accepted_count ?? latest.row_count) > 0),
+    });
+  }
+  return out;
+}
+
+/** Destination rows for a given indicator family (transit / inbound / outbound). */
+export function extractDestinationRows(
+  imports: ImportRecord[],
+  mappings: MappingRecord[],
+  fileTypes: string[]
+): NormalizedRow[] {
+  const out: NormalizedRow[] = [];
+  for (const imp of imports) {
+    if (!imp.file_type || !fileTypes.includes(imp.file_type)) continue;
+    const norm = normalizeImport(imp, mappings);
+    out.push(...norm.filter((r) => r.destination));
+  }
+  return out;
 }
 
 function deriveRisk(p: {

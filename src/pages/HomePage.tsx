@@ -195,10 +195,10 @@ export function HomePage({
         />
         <div className="table-wrap mt-3">
           {!hasImports && (
-            <div className="px-4 py-3 bg-amber-50/60 border-b border-amber-200/60 text-xs text-amber-700 flex items-center gap-2">
+            <div className="px-4 py-3 bg-amber-900/20 border-b border-amber-700/40 text-xs text-amber-300 flex items-center gap-2">
               <AlertCircle className="h-3.5 w-3.5" />
               Données de démonstration anonymisées affichées tant qu'aucun fichier n'est importé.
-              <button className="ml-auto text-amber-800 font-medium hover:underline" onClick={() => setView("import")}>
+              <button className="ml-auto text-amber-200 font-medium hover:underline" onClick={() => setView("import")}>
                 Importer un fichier →
               </button>
             </div>
@@ -259,7 +259,7 @@ export function HomePage({
       </div>
 
       {!hasImports && (
-        <div className="card p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 border-house-200 bg-house-50/30">
+        <div className="card p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 border-house-300 bg-house-100/40">
           <Upload className="h-5 w-5 text-house-600 mt-0.5 shrink-0" />
           <div className="flex-1">
             <p className="text-sm font-semibold text-graphite-800">Démarrez avec vos fichiers</p>
@@ -327,7 +327,7 @@ function KpiEditor({
         {kpis.map((k) => {
           const raw = draft[k.key] ?? "0";
           return (
-            <div key={k.key} className="border border-graphite-200 rounded-lg p-2.5 bg-graphite-50/40">
+            <div key={k.key} className="border border-graphite-200 rounded-lg p-2.5 bg-graphite-100">
               <p className="text-[10px] uppercase tracking-wider text-graphite-500 font-semibold truncate">{k.label}</p>
               <p className="text-base font-semibold text-graphite-900 tabular-nums mt-0.5">{format(k, raw)}</p>
               <div className="mt-1.5 flex items-center gap-1">

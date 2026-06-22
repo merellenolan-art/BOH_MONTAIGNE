@@ -5,10 +5,10 @@
 @tailwind utilities;
 
 @layer base {
-  :root { color-scheme: light; }
+  :root { color-scheme: dark; }
   html, body, #root { height: 100%; }
   body {
-    @apply bg-graphite-50 text-graphite-900 font-sans antialiased;
+    @apply bg-graphite-950 text-graphite-900 font-sans antialiased;
     -webkit-font-smoothing: antialiased;
   }
   h1, h2, h3, h4 {
@@ -19,13 +19,13 @@
 
 @layer components {
   .card {
-    @apply bg-white rounded-xl border border-graphite-200/70 shadow-soft;
+    @apply bg-graphite-50 rounded-xl border border-graphite-200 shadow-soft;
   }
   .card-hover {
     @apply transition-all duration-200 hover:shadow-lift hover:-translate-y-0.5;
   }
   .surface {
-    @apply bg-graphite-50/60 border border-graphite-200/70;
+    @apply bg-graphite-100 border border-graphite-200;
   }
   .btn {
     @apply inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium
@@ -33,48 +33,49 @@
       focus:outline-none focus:ring-2 focus:ring-house-500/30;
   }
   .btn-primary {
-    @apply btn bg-graphite-900 text-white hover:bg-graphite-950;
+    @apply btn bg-graphite-900 text-white hover:bg-graphite-800 border border-graphite-300;
   }
   .btn-house {
-    @apply btn bg-house-600 text-white hover:bg-house-700;
+    @apply btn bg-house-500 text-white hover:bg-house-400 border border-house-600;
   }
   .btn-ghost {
-    @apply btn bg-white text-graphite-700 border border-graphite-300 hover:bg-graphite-50 hover:border-graphite-400;
+    @apply btn bg-graphite-100 text-graphite-900 border border-graphite-200 hover:bg-graphite-200 hover:border-graphite-300;
   }
   .btn-dark {
-    @apply btn bg-graphite-800 text-white hover:bg-graphite-900;
+    @apply btn bg-graphite-950 text-white hover:bg-graphite-900 border border-graphite-300;
   }
   .input {
-    @apply w-full px-3 py-2 rounded-lg border border-graphite-300 bg-white text-sm
-      focus:outline-none focus:ring-2 focus:ring-house-500/20 focus:border-house-400
+    @apply w-full px-3 py-2 rounded-lg border border-graphite-200 bg-graphite-950 text-graphite-900 text-sm
+      focus:outline-none focus:ring-2 focus:ring-house-500/40 focus:border-house-400
       placeholder:text-graphite-400;
   }
   .select {
     @apply input pr-8 appearance-none bg-no-repeat cursor-pointer;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23677079' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23A8ABB2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
     background-position: right 0.6rem center;
   }
   .tag {
     @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium;
   }
-  .tag-ok        { @apply tag bg-emerald-50 text-emerald-700; }
-  .tag-attention { @apply tag bg-amber-50 text-amber-700; }
-  .tag-action    { @apply tag bg-rose-50 text-rose-700; }
-  .tag-neutral   { @apply tag bg-graphite-100 text-graphite-700; }
-  .tag-house     { @apply tag bg-house-50 text-house-700; }
+  .tag-ok        { @apply tag bg-house-100 text-house-700; }
+  .tag-attention { @apply tag bg-amber-900/40 text-amber-300; }
+  .tag-action    { @apply tag bg-rose-900/40 text-rose-300; }
+  .tag-neutral   { @apply tag bg-graphite-100 text-graphite-900; }
+  .tag-house     { @apply tag bg-house-100 text-house-700; }
 
   .table-wrap { @apply card overflow-hidden; }
   .table-base { @apply w-full text-sm border-collapse; }
   .table-base thead th {
-    @apply bg-graphite-900 text-graphite-50 text-left font-semibold px-3 py-2.5
-      whitespace-nowrap sticky top-0 z-10 text-xs uppercase tracking-wider;
+    @apply bg-graphite-100 text-graphite-500 text-left font-semibold px-3 py-2.5
+      whitespace-nowrap sticky top-0 z-10 text-xs uppercase tracking-wider
+      border-b border-graphite-200;
   }
   .table-base tbody td {
-    @apply px-3 py-2 border-t border-graphite-100 align-middle;
+    @apply px-3 py-2 border-t border-graphite-200 align-middle text-graphite-500;
   }
-  .table-base tbody tr { @apply transition-colors hover:bg-graphite-50/60; }
-  .table-base tbody tr.row-attention{ @apply bg-amber-50/40; }
-  .table-base tbody tr.row-action   { @apply bg-rose-50/40; }
+  .table-base tbody tr { @apply transition-colors hover:bg-graphite-100; }
+  .table-base tbody tr.row-attention{ @apply bg-amber-900/20; }
+  .table-base tbody tr.row-action   { @apply bg-rose-900/20; }
 
   .kpi-card {
     @apply relative card p-4 overflow-hidden;
@@ -90,7 +91,7 @@
     @apply font-serif text-2xl font-semibold text-graphite-900 tracking-tight;
   }
   .eyebrow {
-    @apply text-[11px] uppercase tracking-[0.18em] text-house-600 font-semibold;
+    @apply text-[11px] uppercase tracking-[0.18em] text-house-400 font-semibold;
   }
 }
 
@@ -98,9 +99,9 @@
   .scrollbar-thin::-webkit-scrollbar { height: 8px; width: 8px; }
   .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: #d7dadd; border-radius: 9999px;
+    background: #353840; border-radius: 9999px;
   }
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #b6bcc2; }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #3f434c; }
   .animate-rise {
     animation: rise 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
   }

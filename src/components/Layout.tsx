@@ -10,7 +10,7 @@ import {
   Receipt,
   Upload,
 } from "lucide-react";
-import { Logo, Monogram } from "./Logo";
+import { Monogram } from "./Logo";
 import { Toast } from "./ui";
 
 export type View =
@@ -59,18 +59,14 @@ export function Layout({
   return (
     <div className="min-h-screen flex">
       {/* Sidebar — desktop */}
-      <aside className="hidden lg:flex w-64 shrink-0 flex-col bg-graphite-950 text-graphite-100 sticky top-0 h-screen">
-        <div className="flex items-center gap-3 px-5 h-16 border-b border-white/10">
-          <Logo className="h-9 w-9" />
-          <div className="leading-tight">
-            <p className="font-serif text-lg font-semibold tracking-wide text-white">BOH Montaigne</p>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-house-300">Gucci · Montaigne</p>
-          </div>
+      <aside className="hidden lg:flex w-64 shrink-0 flex-col bg-graphite-950 text-graphite-500 sticky top-0 h-screen border-r border-graphite-200">
+        <div className="flex items-center px-5 h-16 border-b border-graphite-200">
+          <p className="font-serif text-lg font-semibold tracking-wide text-graphite-900">BOH Montaigne</p>
         </div>
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-thin">
           {GROUPS.map((group) => (
             <div key={group} className="mb-3">
-              <p className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-[0.18em] text-graphite-500 font-semibold">
+              <p className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-[0.18em] text-graphite-400 font-semibold">
                 {group}
               </p>
               {NAV.filter((n) => n.group === group).map((n) => {
@@ -84,14 +80,14 @@ export function Layout({
                     className={`group w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
                       transition-all duration-150 ${
                         active
-                          ? "bg-white text-graphite-900 shadow-soft"
-                          : "text-graphite-300 hover:bg-white/5 hover:text-white"
+                          ? "bg-house-500 text-white shadow-soft"
+                          : "text-graphite-500 hover:bg-graphite-100 hover:text-graphite-900"
                       }`}
                   >
-                    <Icon className={`h-4 w-4 shrink-0 ${active ? "text-house-600" : "text-graphite-400 group-hover:text-house-300"}`} />
+                    <Icon className={`h-4 w-4 shrink-0 ${active ? "text-white" : "text-graphite-400 group-hover:text-house-400"}`} />
                     <span className="flex-1 text-left truncate">{n.label}</span>
                     {n.id === "import" && importCount > 0 && (
-                      <span className="tag bg-house-500/90 text-white px-1.5 py-0">{importCount}</span>
+                      <span className="tag bg-house-500 text-white px-1.5 py-0">{importCount}</span>
                     )}
                   </button>
                 );
@@ -99,10 +95,10 @@ export function Layout({
             </div>
           ))}
         </nav>
-        <div className="p-4 border-t border-white/10 text-xs text-graphite-400">
+        <div className="p-4 border-t border-graphite-200 text-xs text-graphite-400">
           <div className="flex items-center gap-2 mb-1">
             <Monogram className="h-4 w-4" />
-            <span className="text-house-300 font-medium tracking-wide">INTERNE · CONFIDENTIEL</span>
+            <span className="text-house-400 font-medium tracking-wide">INTERNE · CONFIDENTIEL</span>
           </div>
           {lastUpdated ? (
             <p>Dernier import&nbsp;: {lastUpdated.toLocaleString("fr-FR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}</p>
@@ -114,12 +110,10 @@ export function Layout({
 
       {/* Mobile top bar */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="lg:hidden sticky top-0 z-30 bg-graphite-950 text-white px-4 h-14 flex items-center gap-3 shadow-soft">
-          <Logo className="h-8 w-8" />
-          <span className="font-serif text-base font-semibold flex-1 truncate">BOH Montaigne</span>
-          <span className="text-[10px] text-house-300 uppercase tracking-widest">Montaigne</span>
+        <header className="lg:hidden sticky top-0 z-30 bg-graphite-950 text-graphite-900 px-4 h-14 flex items-center gap-3 shadow-soft border-b border-graphite-200">
+          <span className="font-serif text-base font-semibold flex-1 truncate text-graphite-900">BOH Montaigne</span>
         </header>
-        <nav className="lg:hidden sticky top-14 z-30 bg-white border-b border-graphite-200 overflow-x-auto scrollbar-thin">
+        <nav className="lg:hidden sticky top-14 z-30 bg-graphite-950 border-b border-graphite-200 overflow-x-auto scrollbar-thin">
           <div className="flex gap-1 p-2 min-w-max">
             {NAV.map((n) => {
               const Icon = n.icon;
@@ -129,7 +123,7 @@ export function Layout({
                   key={n.id}
                   onClick={() => setView(n.id)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap ${
-                    active ? "bg-graphite-900 text-white" : "text-graphite-600 hover:bg-graphite-100"
+                    active ? "bg-house-500 text-white" : "text-graphite-500 hover:bg-graphite-100"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -140,8 +134,8 @@ export function Layout({
           </div>
         </nav>
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">{children}</main>
-        <footer className="px-6 py-4 text-xs text-graphite-400 border-t border-graphite-200 bg-white">
-          {now.getFullYear()} · BOH Montaigne · Gucci Montaigne — Tableau de bord opérationnel back of house · Usage interne
+        <footer className="px-6 py-4 text-xs text-graphite-400 border-t border-graphite-200 bg-graphite-950">
+          {now.getFullYear()} · BOH Montaigne — Tableau de bord opérationnel back of house · Usage interne
         </footer>
       </div>
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
