@@ -111,6 +111,8 @@ const FILE_TYPE_SIGNALS: Record<string, string[]> = {
   transit: ["transit", "in transit", "in_transit", "vl06i"],
   inbound: ["inbound", "purchase order", "po", "goods receipt"],
   outbound: ["outbound", "goods issue", "outbound delivery", "gi"],
+  received_store_bo: ["received_store_bo", "received store bo", "store bo received"],
+  sending_store_bo: ["sending_store_bo", "sending store bo", "store bo sending"],
   sales: ["sales", "billing", "invoice", "revenue"],
   reservations: ["reservation", "reserv", "blocked stock"],
   consignment: ["consignment", "consgt", "consign"],
@@ -337,6 +339,9 @@ export const FILE_COLUMN_SPEC: Record<string, ColumnSpec> = {
   reservations: { quantity: "T", sku: "" },
   // Informations terrain: free-form. No fixed columns — mapping required when unrecognized.
   terrain: {},
+  // Store BO exports: headers vary, so automatic/saved mapping is used.
+  received_store_bo: {},
+  sending_store_bo: {},
 };
 
 /** Whether the department column is identified with certainty (no guessing). */
@@ -516,8 +521,13 @@ export function buildDepartmentSummary(input: BuildSummaryInput): DeptSummaryRow
     if (!imp.file_type || imp.rows.length === 0) continue;
     if (!FILE_COLUMN_SPEC[imp.file_type]) continue; // ignore types without a spec
     const norm = normalizeImport(imp, input.mappings);
-    if (!byType.has(imp.file_type)) byType.set(imp.file_type, []);
-    byType.get(imp.file_type)!.push(...norm);
+    const bucketType = imp.file_type === "received_store_bo"
+      ? "inbound"
+      : imp.file_type === "sending_store_bo"
+        ? "outbound"
+        : imp.file_type;
+    if (!byType.has(bucketType)) byType.set(bucketType, []);
+    byType.get(bucketType)!.push(...norm);
   }
 
   // Newness: SKUs present in Transit but absent from Stock On Hand.
@@ -609,8 +619,8 @@ export function buildIndicatorSources(
     { family: "newness", types: ["transit"] },
     { family: "sales", types: ["sales"] },
     { family: "adjust", types: ["adjust"] },
-    { family: "inbound", types: ["inbound"] },
-    { family: "outbound", types: ["outbound"] },
+    { family: "inbound", types: ["inbound", "received_store_bo"] },
+    { family: "outbound", types: ["outbound", "sending_store_bo"] },
     { family: "consignment", types: ["consignment"] },
     { family: "reservations", types: ["reservations"] },
     { family: "terrain", types: ["terrain"] },
