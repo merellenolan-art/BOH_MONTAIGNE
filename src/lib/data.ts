@@ -5,6 +5,7 @@ import {
   FILE_COLUMN_SPEC,
   computeImportStatus,
   detectFileType,
+  detectFileTypeWithConfidence,
   normalizeRowsForType,
   normalizeHeaders,
   suggestMapping,
@@ -116,9 +117,10 @@ export interface SaveImportInput {
  */
 export async function saveImport(
   input: SaveImportInput
-): Promise<{ record: ImportRecord; detectedType: string | null }> {
+): Promise<{ record: ImportRecord; detectedType: string | null; confidence: number }> {
   const flatHeaders = Object.values(input.headers).flat();
-  const detectedType = detectFileType(input.fileName, flatHeaders, input.fileTypes);
+  const detection = detectFileTypeWithConfidence(input.fileName, input.sheetNames, flatHeaders, input.fileTypes);
+  const detectedType = detection.type;
 
   const savedMapping = input.existingMapping
     .filter((m) => m.file_type === detectedType)
@@ -162,6 +164,7 @@ export async function saveImport(
     preview_rows,
     status,
     rows: input.rows,
+    confidence: detection.confidence,
   };
 
   const { data, error } = await supabase
@@ -195,12 +198,21 @@ export async function saveImport(
   return {
     record: data as unknown as ImportRecord,
     detectedType,
+    confidence: detection.confidence,
   };
 }
 
 export async function deleteImport(id: string): Promise<void> {
   const { error } = await supabase.from(DB.imports).delete().eq("id", id);
   if (error) throw error;
+}
+
+export async function deleteAllImports(): Promise<void> {
+  const { error } = await supabase.from(DB.imports).delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  if (error) throw error;
+  // Also wipe the summary so dashboards reset to demo mode.
+  await supabase.from(DB.summary).delete().neq("dept_id", "__never__");
+  await supabase.from(DB.indicatorSources).delete().neq("family", "");
 }
 
 /** Correct the detected type of an existing import, then recompute reject stats. */

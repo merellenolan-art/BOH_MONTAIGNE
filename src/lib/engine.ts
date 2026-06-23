@@ -106,51 +106,185 @@ export function suggestMapping(
 /* File-type detection                                                */
 /* ------------------------------------------------------------------ */
 
-const FILE_TYPE_SIGNALS: Record<string, string[]> = {
-  stock: ["stock", "oh", "on hand", "onhand", "stock_oh", "stock online", "mb52"],
-  transit: ["transit", "in transit", "in_transit", "vl06i"],
-  inbound: ["inbound", "purchase order", "po", "goods receipt"],
-  outbound: ["outbound", "goods issue", "outbound delivery", "gi"],
-  received_store_bo: ["received_store_bo", "received store bo", "store bo received"],
-  sending_store_bo: ["sending_store_bo", "sending store bo", "store bo sending"],
-  sales: ["sales", "billing", "invoice", "revenue"],
-  reservations: ["reservation", "reserv", "blocked stock"],
-  consignment: ["consignment", "consgt", "consign"],
-  adjust: ["adjust", "adjustment", "stock adjustment", "diff", "variance"],
-  expeditions: ["expedition", "expédition", "shipment", "shipping", "expedier"],
-  fast: ["fast", "fast order", "clienteling"],
-  mao: ["mao", "e-commerce", "ecommerce", "web order", "online order"],
-  cites: ["cites", "c.i.t.e.s", "species", "certificate"],
-  packaging: ["packaging", "emballage", "pack", "wrapping"],
-  terrain: ["terrain", "field", "inventaire terrain", "comptage"],
-  fastshipment: ["fastshipment", "fast shipment", "expédition express"],
-  packaging_lib: ["packaging", "bibliothèque", "library"],
-  cites_extract: ["cites"],
-  oracle_sales: ["oracle", "caisse", "pos"],
-  sap_sales: ["sap", "ventes"],
+const FILE_TYPE_SIGNALS: Record<string, { fileName: string[]; sheetName: string[]; columns: string[] }> = {
+  // ── STOCK ─────────────────────────────────────────────────────────────
+  stock: {
+    fileName: ["stock", "mb52", "stock_oh", "stock_online", "stockoh", "on_hand", "onhand", "stock_15", "stock_18", "stock_20", "stockjuly", "stockjune"],
+    sheetName: ["stock", "mb52", "stock oh", "on hand", "stockoh", "stock online"],
+    columns: ["stock", "on_hand", "onhand", "oh_qty", "unrestricted", "quantity_on_hand", "available_qty"],
+  },
+  // ── TRANSIT ───────────────────────────────────────────────────────────
+  transit: {
+    fileName: ["transit", "vl06i", "in_transit", "intransit"],
+    sheetName: ["transit", "vl06i", "in transit", "open transit"],
+    columns: ["transit", "in_transit", "in transit", "document_date", "delivery_date", "vl06i"],
+  },
+  // ── INBOUND ───────────────────────────────────────────────────────────
+  inbound: {
+    fileName: ["inbound", "vl06i_in", "po_receipt", "goods_receipt", "gr"],
+    sheetName: ["inbound", "vl06i in", "purchase order", "goods receipt", "gr"],
+    columns: ["inbound", "goods_receipt", "purchase_order", "po_number", "receiving_date"],
+  },
+  // ── OUTBOUND ──────────────────────────────────────────────────────────
+  outbound: {
+    fileName: ["outbound", "vl06o", "goods_issue", "gi"],
+    sheetName: ["outbound", "vl06o", "goods issue", "gi"],
+    columns: ["outbound", "goods_issue", "delivery_number", "shipped_date"],
+  },
+  // ── SALES ─────────────────────────────────────────────────────────────
+  sales: {
+    fileName: ["sales", "billing", "invoice", "ventes", "revenue", "sap_sales", "sales_sap"],
+    sheetName: ["sales", "billing", "ventes", "revenue", "sap sales"],
+    columns: ["sales", "billing", "invoice", "net_value", "amount", "sales_value", "billed_qty"],
+  },
+  // ── ADJUSTMENTS ───────────────────────────────────────────────────────
+  adjust: {
+    fileName: ["adjust", "adjustment", "adjustments", "variance", "diff", "adjust_sap", "sap_adjust"],
+    sheetName: ["adjust", "adjustment", "variance", "diff"],
+    columns: ["adjustment", "variance", "diff", "difference", "adjust_qty", "adjust_value", "inv_adjustment"],
+  },
+  // ── RECEIVED STORE BO ─────────────────────────────────────────────────
+  received_store_bo: {
+    fileName: ["received_store_bo", "received store bo", "archived documents", "archived_documents"],
+    sheetName: ["received store bo", "received_store_bo", "archived documents"],
+    columns: ["archived", "received_store", "store_bo"],
+  },
+  // ── SENDING STORE BO ──────────────────────────────────────────────────
+  sending_store_bo: {
+    fileName: ["sending_store_bo", "sending store bo", "sending_archived", "archived_cartons"],
+    sheetName: ["sending store bo", "sending_store_bo", "sending archived cartons"],
+    columns: ["sending_store", "archived_cartons"],
+  },
+  // ── FAST / SHIPMENT ───────────────────────────────────────────────────
+  fast: {
+    fileName: ["fast", "shipment_report", "fastshipment", "fast_shipment", "clienteling"],
+    sheetName: ["fast", "shipment report", "fastshipment", "clienteling"],
+    columns: ["fast", "fast_order", "clienteling", "express", "quick_ship"],
+  },
+  // ── MAO / E-COMMERCE ──────────────────────────────────────────────────
+  mao: {
+    fileName: ["mao", "ecommerce", "e-commerce", "web_order", "online_order", "fulfillment", "c&c"],
+    sheetName: ["mao", "e-commerce", "ecommerce", "web order", "fulfillment", "c&c fulfillment"],
+    columns: ["mao", "e_commerce", "web_order", "online", "fulfillment_status"],
+  },
+  // ── RESERVATIONS ──────────────────────────────────────────────────────
+  reservations: {
+    fileName: ["reservation", "reservations", "blocked_stock", "reserv"],
+    sheetName: ["reservation", "reservations", "blocked stock"],
+    columns: ["reservation", "reserved_qty", "blocked_stock", "requirement"],
+  },
+  // ── CONSIGNMENTS ──────────────────────────────────────────────────────
+  consignment: {
+    fileName: ["consignment", "consign", "consgt"],
+    sheetName: ["consignment", "consign"],
+    columns: ["consignment", "consignment_qty", "consign"],
+  },
+  // ── EXPEDITIONS ───────────────────────────────────────────────────────
+  expeditions: {
+    fileName: ["expedition", "expédition", "expeditions", "shipment", "shipping", "fastshipment"],
+    sheetName: ["expedition", "expéditions", "shipment", "shipping"],
+    columns: ["expedition", "shipment_id", "shipping_date", "recipient", "tracking"],
+  },
+  // ── PACKAGING ─────────────────────────────────────────────────────────
+  packaging: {
+    fileName: ["packaging", "emballage", "pack", "packaging_master", "wrapping"],
+    sheetName: ["packaging", "emballage", "packaging master", "pack library"],
+    columns: ["packaging", "emballage", "pack_type", "tsl", "reorder_threshold", "barcode"],
+  },
+  // ── CITES ─────────────────────────────────────────────────────────────
+  cites: {
+    fileName: ["cites", "c.i.t.e.s", "cites_data", "cites_signaletique"],
+    sheetName: ["cites", "c.i.t.e.s", "cites data", "cites signalétique"],
+    columns: ["cites", "species", "certificate", "permit", "dossier", "export_permit"],
+  },
+  // ── ORACLE / CAISSE ───────────────────────────────────────────────────
+  oracle_sales: {
+    fileName: ["oracle", "caisse", "pos", "cash_register"],
+    sheetName: ["oracle", "caisse", "pos", "cash"],
+    columns: ["oracle", "caisse", "pos", "cash_qty", "cash_value", "register"],
+  },
+  // ── SAP SALES ─────────────────────────────────────────────────────────
+  sap_sales: {
+    fileName: ["sap_sales", "sap_ventes", "sap"],
+    sheetName: ["sap sales", "sap ventes"],
+    columns: ["sap", "sap_qty", "sap_value", "billing_document"],
+  },
+  // ── TERRAIN ───────────────────────────────────────────────────────────
+  terrain: {
+    fileName: ["terrain", "inventaire_terrain", "comptage", "field_count"],
+    sheetName: ["terrain", "inventaire terrain", "comptage", "field count"],
+    columns: ["terrain", "comptage", "inventaire", "field_qty"],
+  },
 };
+
+export interface DetectionResult {
+  type: string | null;
+  confidence: number; // 0-100
+  matchedSignals: { source: "fileName" | "sheetName" | "columns"; signal: string }[];
+}
+
+export function detectFileTypeWithConfidence(
+  fileName: string,
+  sheetNames: string[],
+  headers: string[],
+  fileTypes: FileType[]
+): DetectionResult {
+  const fileNameLow = fileName.toLowerCase().replace(/\.[^.]+$/, "");
+  const sheetNamesLow = sheetNames.map((s) => s.toLowerCase());
+  const headersLow = headers.map((h) => h.toLowerCase().replace(/[^a-z0-9_]/g, "_"));
+
+  interface Candidate { type: string; score: number; signals: DetectionResult["matchedSignals"] }
+  const candidates: Candidate[] = [];
+
+  for (const ft of fileTypes) {
+    const sigs = FILE_TYPE_SIGNALS[ft.code];
+    if (!sigs) continue;
+
+    let score = 0;
+    const matched: DetectionResult["matchedSignals"] = [];
+
+    // Sheet names have highest priority (weight 40 each, max 80)
+    for (const sig of sigs.sheetName) {
+      if (sheetNamesLow.some((s) => s.includes(sig))) {
+        score += 40;
+        matched.push({ source: "sheetName", signal: sig });
+        break;
+      }
+    }
+    // Columns second (weight 15 each, max 60)
+    let colHits = 0;
+    for (const sig of sigs.columns) {
+      if (headersLow.some((h) => h.includes(sig))) {
+        if (colHits < 4) { score += 15; matched.push({ source: "columns", signal: sig }); }
+        colHits++;
+      }
+    }
+    // File name last (weight 20 each, max 40)
+    for (const sig of sigs.fileName) {
+      if (fileNameLow.includes(sig.replace(/[^a-z0-9]/g, ""))) {
+        score += 20;
+        matched.push({ source: "fileName", signal: sig });
+        break;
+      }
+    }
+
+    if (score > 0) candidates.push({ type: ft.code, score, signals: matched });
+  }
+
+  if (candidates.length === 0) return { type: null, confidence: 0, matchedSignals: [] };
+  candidates.sort((a, b) => b.score - a.score);
+  const best = candidates[0];
+  // Normalise to 0-100: max theoretical score = 40+60+40 = 140
+  const confidence = Math.min(100, Math.round((best.score / 140) * 100));
+  return { type: best.type, confidence, matchedSignals: best.signals };
+}
 
 export function detectFileType(
   fileName: string,
   headers: string[],
   fileTypes: FileType[]
 ): string | null {
-  const text = (fileName + " " + headers.join(" ")).toLowerCase();
-  const scores = new Map<string, number>();
-  for (const ft of fileTypes) {
-    const signals = FILE_TYPE_SIGNALS[ft.code] ?? [];
-    let score = 0;
-    for (const sig of signals) if (text.includes(sig)) score += 1;
-    if (score > 0) scores.set(ft.code, score);
-  }
-  if (scores.size === 0) {
-    const base = fileName.toLowerCase().replace(/\.[^.]+$/, "");
-    for (const ft of fileTypes) {
-      if (base.includes(ft.code) || base.includes("terrain")) scores.set(ft.code, 1);
-    }
-  }
-  if (scores.size === 0) return null;
-  return [...scores.entries()].sort((a, b) => b[1] - a[1])[0][0];
+  return detectFileTypeWithConfidence(fileName, [], headers, fileTypes).type;
 }
 
 /* ------------------------------------------------------------------ */

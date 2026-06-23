@@ -52,6 +52,7 @@ export interface ImportRecord {
   rejected_reasons?: RejectReason[];
   preview_rows?: Record<string, unknown>[];
   imported_at: string;
+  confidence?: number;
 }
 
 export type IndicatorFamily =
