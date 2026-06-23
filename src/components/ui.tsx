@@ -123,11 +123,11 @@ export function Toast({ message, onClose }: { message: string; onClose: () => vo
 }
 
 /** A destination zone badge. */
-export function ZoneTag({ zone }: { zone: "France" | "Europe" | "UK" | "Autre" }) {
+export function ZoneTag({ zone }: { zone: "France" | "Europe" | "Trecate" | "Autre" }) {
   const map: Record<string, string> = {
     France: "bg-house-100 text-house-400",
     Europe: "bg-steel-100 text-steel-400",
-    UK: "bg-graphite-100 text-graphite-500",
+    Trecate: "bg-amber-100 text-amber-600",
     Autre: "bg-graphite-200 text-graphite-500",
   };
   return <span className={`tag ${map[zone]}`}>{zone}</span>;

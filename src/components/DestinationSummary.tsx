@@ -15,7 +15,7 @@ export function buildDestinationSummary(rows: NormalizedRow[]): DestinationSumma
   return { rowsByZone, total };
 }
 
-const ZONE_ORDER: DestinationZone[] = ["France", "Europe", "UK", "Autre"];
+const ZONE_ORDER: DestinationZone[] = ["France", "Europe", "Trecate", "Autre"];
 
 /** Compact destination breakdown card used by Home & Evening dashboards. */
 export function DestinationSummaryCard({
@@ -41,7 +41,7 @@ export function DestinationSummaryCard({
                 <div className="h-2 bg-graphite-100 rounded-full overflow-hidden">
                   <div
                     className={`h-full ${
-                      zone === "France" ? "bg-house-500" : zone === "Europe" ? "bg-steel-400" : "bg-graphite-400"
+                      zone === "France" ? "bg-house-500" : zone === "Europe" ? "bg-steel-400" : zone === "Trecate" ? "bg-amber-400" : "bg-graphite-400"
                     }`}
                     style={{ width: `${pct}%` }}
                   />

@@ -96,7 +96,7 @@ export function ExpeditionsDashboard({
           <option value="all">Toutes destinations</option>
           <option value="France">France</option>
           <option value="Europe">Europe</option>
-          <option value="UK">UK</option>
+          <option value="Trecate">Trecate</option>
           <option value="Autre">Autre</option>
         </select>
         <select className="select w-auto" value={risk} onChange={(e) => setRisk(e.target.value as RiskLevel | "all")}>

@@ -87,7 +87,7 @@ export function FilterBar({
 }) {
   const { exportTable, copyWhatsApp } = useDashboardExports();
   const [copying, setCopying] = useState(false);
-  const zones = ["France", "Europe", "UK", "Autre"];
+  const zones = ["France", "Europe", "Trecate", "Autre"];
 
   return (
     <div className="card p-3 flex flex-col xl:flex-row gap-3 xl:items-center flex-wrap">

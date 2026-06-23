@@ -31,9 +31,9 @@ export function EveningDashboard({
   const maoRestant = 8; // demo
   const packagingRestant = 5; // demo
 
-  const zones: DestinationZone[] = ["France", "Europe", "UK", "Autre"];
+  const zones: DestinationZone[] = ["France", "Europe", "Trecate", "Autre"];
   const split = useMemo(() => {
-    const map: Record<DestinationZone, number> = { France: 0, Europe: 0, UK: 0, Autre: 0 };
+    const map: Record<DestinationZone, number> = { France: 0, Europe: 0, Trecate: 0, Autre: 0 };
     flows.forEach((f) => { map[f.zone] += f.qty; });
     return map;
   }, [flows]);
@@ -78,7 +78,7 @@ export function EveningDashboard({
 
       {/* Destination split */}
       <div className="card p-4">
-        <h3 className="text-sm font-semibold text-graphite-900 mb-3">Répartition France / Europe / UK / Autre</h3>
+        <h3 className="text-sm font-semibold text-graphite-900 mb-3">Répartition France / Europe / Trecate / Autre</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {zones.map((z) => (
             <div key={z} className="text-center p-3 rounded-lg border border-graphite-200">

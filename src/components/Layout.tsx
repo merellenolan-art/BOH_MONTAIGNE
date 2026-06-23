@@ -6,10 +6,10 @@ import {
   Moon,
   Leaf,
   Truck,
-  ShoppingBag,
   Receipt,
   Upload,
   SlidersHorizontal,
+  Globe,
 } from "lucide-react";
 import { Monogram } from "./Logo";
 import { Toast } from "./ui";
@@ -26,20 +26,20 @@ export type View =
   | "adjustments"
   | "import";
 
-const NAV: { id: View; label: string; icon: typeof Home; group: "Pilotage" | "Flux & Pilotage" | "Flux" | "Données"; hint: string }[] = [
-  { id: "home", label: "Home", icon: Home, group: "Pilotage", hint: "Centre de pilotage" },
-  { id: "morning", label: "Morning", icon: Sunrise, group: "Pilotage", hint: "Stock & transit" },
-  { id: "evening", label: "Evening", icon: Moon, group: "Pilotage", hint: "Clôture de journée" },
-  { id: "packaging", label: "Packaging", icon: Package, group: "Flux & Pilotage", hint: "Bibliothèque packaging" },
-  { id: "adjustments", label: "Adjustments", icon: SlidersHorizontal, group: "Flux & Pilotage", hint: "Suivi des ajustements d'inventaire" },
-  { id: "cites", label: "CITES", icon: Leaf, group: "Flux", hint: "Réglementation" },
-  { id: "expeditions", label: "Expéditions", icon: Truck, group: "Flux", hint: "FastShipment" },
-  { id: "mao", label: "E-commerce / MAO", icon: ShoppingBag, group: "Flux", hint: "Commandes web" },
-  { id: "oracle", label: "Caisse / Oracle", icon: Receipt, group: "Flux", hint: "Oracle vs SAP" },
+const NAV: { id: View; label: string; icon: typeof Home; group: "Pilotage" | "Flux" | "Données"; hint: string }[] = [
+  { id: "home", label: "Home Dashboard", icon: Home, group: "Pilotage", hint: "Centre de pilotage" },
+  { id: "morning", label: "Morning Dashboard", icon: Sunrise, group: "Pilotage", hint: "Stock & transit" },
+  { id: "evening", label: "Evening Dashboard", icon: Moon, group: "Pilotage", hint: "Clôture de journée" },
+  { id: "adjustments", label: "Adjustments", icon: SlidersHorizontal, group: "Pilotage", hint: "Suivi des ajustements d'inventaire" },
+  { id: "oracle", label: "Caisse Dashboard", icon: Receipt, group: "Pilotage", hint: "Oracle vs SAP" },
+  { id: "packaging", label: "Packaging Dashboard", icon: Package, group: "Flux", hint: "Bibliothèque packaging" },
+  { id: "cites", label: "CITES Dashboard", icon: Leaf, group: "Flux", hint: "Réglementation" },
+  { id: "expeditions", label: "Expéditions Dashboard", icon: Truck, group: "Flux", hint: "FastShipment" },
+  { id: "mao", label: "E-commerce Dashboard", icon: Globe, group: "Flux", hint: "Commandes web" },
   { id: "import", label: "Import Center", icon: Upload, group: "Données", hint: "Import des fichiers" },
 ];
 
-const GROUPS = ["Pilotage", "Flux & Pilotage", "Flux", "Données"] as const;
+const GROUPS = ["Pilotage", "Flux", "Données"] as const;
 
 export function Layout({
   view,

@@ -194,4 +194,4 @@ export interface NormalizedRow {
 }
 
 // Destination splits used by Home and Evening dashboards.
-export type DestinationZone = "France" | "Europe" | "UK" | "Autre";
+export type DestinationZone = "France" | "Europe" | "Trecate" | "Autre";

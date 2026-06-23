@@ -230,10 +230,10 @@ export function groupByDepartment(rows: NormalizedRow[]): Map<string, Normalized
   return map;
 }
 
-/** Group rows by destination zone (France / Europe / UK / Autre). */
+/** Group rows by destination zone (France / Europe / Trecate / Autre). */
 export function groupByDestination(rows: NormalizedRow[]): Map<DestinationZone, NormalizedRow[]> {
   const map = new Map<DestinationZone, NormalizedRow[]>([
-    ["France", []], ["Europe", []], ["UK", []], ["Autre", []],
+    ["France", []], ["Europe", []], ["Trecate", []], ["Autre", []],
   ]);
   for (const r of rows) {
     const zone = classifyDestination(r.destination ?? "");
@@ -246,8 +246,8 @@ export function classifyDestination(dest: string): DestinationZone {
   const d = (dest ?? "").toLowerCase().trim();
   if (!d) return "Autre";
   if (["france", "fr", "paris", "montaigne"].some((k) => d.includes(k))) return "France";
-  if (["uk", "united kingdom", "london", "londres"].some((k) => d.includes(k))) return "UK";
-  if (["italy", "italie", "milano", "rome", "spain", "espagne", "germany", "allemagne", "europe"].some((k) => d.includes(k)))
+  if (["trecate", "italie", "italy", "milano", "rome"].some((k) => d.includes(k))) return "Trecate";
+  if (["uk", "united kingdom", "london", "londres", "spain", "espagne", "germany", "allemagne", "europe"].some((k) => d.includes(k)))
     return "Europe";
   return "Autre";
 }
@@ -877,11 +877,11 @@ export interface DemoTransitRow {
 
 export function demoTransit(): DemoTransitRow[] {
   const rnd = rng(7);
-  const zones: DestinationZone[] = ["France", "Europe", "UK", "Autre"];
+  const zones: DestinationZone[] = ["France", "Europe", "Trecate", "Autre"];
   const dests: Record<DestinationZone, string[]> = {
     France: ["Paris", "Lyon", "Bordeaux"],
     Europe: ["Milano", "Madrid", "Roma"],
-    UK: ["London"],
+    Trecate: ["Trecate", "Novara"],
     Autre: ["Tokyo", "New York", "Hong Kong"],
   };
   const rows: DemoTransitRow[] = [];
@@ -1004,11 +1004,11 @@ export interface DemoExpeditionRow {
 
 export function demoExpeditions(): DemoExpeditionRow[] {
   const rnd = rng(91);
-  const zones: DestinationZone[] = ["France", "Europe", "UK", "Autre"];
+  const zones: DestinationZone[] = ["France", "Europe", "Trecate", "Autre"];
   const dests: Record<DestinationZone, string[]> = {
     France: ["Paris 8e", "Lyon", "Nice"],
     Europe: ["Roma", "Madrid", "Wien"],
-    UK: ["London", "Manchester"],
+    Trecate: ["Trecate", "Novara"],
     Autre: ["Tokyo", "New York"],
   };
   const names = ["M. Dupont", "Mme Martin", "M. Bianchi", "Mme Garcia", "M. Schmidt", "Mme Tanaka"];
@@ -1109,11 +1109,11 @@ export interface DemoEveningFlow {
 
 export function demoEveningFlows(): DemoEveningFlow[] {
   const rnd = rng(404);
-  const zones: DestinationZone[] = ["France", "Europe", "UK", "Autre"];
+  const zones: DestinationZone[] = ["France", "Europe", "Trecate", "Autre"];
   const dests: Record<DestinationZone, string[]> = {
     France: ["Paris 8e", "Neuilly"],
     Europe: ["Milano", "Madrid"],
-    UK: ["London"],
+    Trecate: ["Trecate"],
     Autre: ["Tokyo", "New York"],
   };
   const flows: DemoEveningFlow[] = [];
