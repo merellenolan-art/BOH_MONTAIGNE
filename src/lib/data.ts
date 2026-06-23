@@ -424,7 +424,7 @@ export async function fetchKpiOverrides(): Promise<KpiOverride[]> {
   const { data, error } = await supabase
     .from("boh_kpi_overrides")
     .select("key, label, value_numeric, unit, updated_at, updated_by")
-    .order("key");
+    .order("sort_order", { ascending: true });
   if (error) throw error;
   return (data ?? []) as KpiOverride[];
 }
