@@ -145,19 +145,19 @@ const FILE_TYPE_SIGNALS: Record<string, { fileName: string[]; sheetName: string[
   },
   // ── RECEIVED STORE BO ─────────────────────────────────────────────────
   received_store_bo: {
-    fileName: ["received_store_bo", "received store bo", "archived documents", "archived_documents"],
+    fileName: ["received_store_bo", "received store bo", "archived documents", "archived_documents", "archiveddocumentsreport", "archiveddocuments"],
     sheetName: ["received store bo", "received_store_bo", "archived documents"],
     columns: ["archived", "received_store", "store_bo"],
   },
   // ── SENDING STORE BO ──────────────────────────────────────────────────
   sending_store_bo: {
-    fileName: ["sending_store_bo", "sending store bo", "sending_archived", "archived_cartons"],
+    fileName: ["sending_store_bo", "sending store bo", "sending_archived", "archived_cartons", "sendingarchivedcartons", "sendingarchivedcartonsreport"],
     sheetName: ["sending store bo", "sending_store_bo", "sending archived cartons"],
     columns: ["sending_store", "archived_cartons"],
   },
   // ── FAST / SHIPMENT ───────────────────────────────────────────────────
   fast: {
-    fileName: ["fast", "shipment_report", "fastshipment", "fast_shipment", "clienteling"],
+    fileName: ["fast", "shipment_report", "shipmentreport", "fastshipment", "fast_shipment", "clienteling"],
     sheetName: ["fast", "shipment report", "fastshipment", "clienteling"],
     columns: ["fast", "fast_order", "clienteling", "express", "quick_ship"],
   },
@@ -215,6 +215,12 @@ const FILE_TYPE_SIGNALS: Record<string, { fileName: string[]; sheetName: string[
     sheetName: ["terrain", "inventaire terrain", "comptage", "field count"],
     columns: ["terrain", "comptage", "inventaire", "field_qty"],
   },
+  // ── RUNS ──────────────────────────────────────────────────────────────
+  runs: {
+    fileName: ["runs", "run_boutique", "run_report", "runner"],
+    sheetName: ["runs", "run boutique", "run report"],
+    columns: ["run", "runner", "run_id", "run_ref", "run_date"],
+  },
 };
 
 export interface DetectionResult {
@@ -230,6 +236,12 @@ export function detectFileTypeWithConfidence(
   fileTypes: FileType[]
 ): DetectionResult {
   const fileNameLow = fileName.toLowerCase().replace(/\.[^.]+$/, "");
+  // Strip date suffixes like _13.06.26, _20260612071420, _2026-06-13 before matching
+  const fileNameNorm = fileNameLow
+    .replace(/_?\d{4}[-._]\d{2}[-._]\d{2}([-._]\d+)?$/, "")
+    .replace(/_?\d{2}[-._]\d{2}[-._]\d{2,4}$/, "")
+    .replace(/_?\d{8,14}$/, "")
+    .replace(/[^a-z0-9]/g, "");
   const sheetNamesLow = sheetNames.map((s) => s.toLowerCase());
   const headersLow = headers.map((h) => h.toLowerCase().replace(/[^a-z0-9_]/g, "_"));
 
@@ -261,7 +273,7 @@ export function detectFileTypeWithConfidence(
     }
     // File name last (weight 20 each, max 40)
     for (const sig of sigs.fileName) {
-      if (fileNameLow.includes(sig.replace(/[^a-z0-9]/g, ""))) {
+      if (fileNameNorm.includes(sig.replace(/[^a-z0-9]/g, ""))) {
         score += 20;
         matched.push({ source: "fileName", signal: sig });
         break;

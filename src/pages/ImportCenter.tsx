@@ -250,11 +250,22 @@ export function ImportCenter({
 /* ------------------------------------------------------------------ */
 
 const TYPE_GROUPS: { label: string; codes: string[] }[] = [
-  { label: "Stock & Transit", codes: ["stock", "transit", "inbound", "outbound"] },
-  { label: "Ventes & Ajustements", codes: ["sales", "adjust", "sap_sales"] },
-  { label: "Flux", codes: ["fast", "expeditions", "mao", "reservations", "consignment"] },
-  { label: "Documents", codes: ["received_store_bo", "sending_store_bo"] },
-  { label: "Métier", codes: ["packaging", "cites", "oracle_sales", "terrain"] },
+  {
+    label: "Pilotage",
+    codes: ["stock", "sales", "adjust", "reservations", "consignment"],
+  },
+  {
+    label: "Flux",
+    codes: ["transit", "inbound", "outbound", "fast", "mao", "received_store_bo", "sending_store_bo"],
+  },
+  {
+    label: "Caisse / Archivage",
+    codes: ["sap_sales", "oracle_sales"],
+  },
+  {
+    label: "Métier",
+    codes: ["packaging", "cites", "runs"],
+  },
 ];
 
 function SupportedTypesPanel({ fileTypes, imports }: { fileTypes: FileType[]; imports: ImportRecord[] }) {
