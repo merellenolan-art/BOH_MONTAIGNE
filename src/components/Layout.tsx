@@ -9,6 +9,7 @@ import {
   ShoppingBag,
   Receipt,
   Upload,
+  SlidersHorizontal,
 } from "lucide-react";
 import { Monogram } from "./Logo";
 import { Toast } from "./ui";
@@ -22,13 +23,15 @@ export type View =
   | "expeditions"
   | "mao"
   | "oracle"
+  | "adjustments"
   | "import";
 
-const NAV: { id: View; label: string; icon: typeof Home; group: "Pilotage" | "Flux" | "Données"; hint: string }[] = [
+const NAV: { id: View; label: string; icon: typeof Home; group: "Pilotage" | "Flux & Pilotage" | "Flux" | "Données"; hint: string }[] = [
   { id: "home", label: "Home", icon: Home, group: "Pilotage", hint: "Centre de pilotage" },
   { id: "morning", label: "Morning", icon: Sunrise, group: "Pilotage", hint: "Stock & transit" },
-  { id: "packaging", label: "Packaging", icon: Package, group: "Pilotage", hint: "Bibliothèque packaging" },
   { id: "evening", label: "Evening", icon: Moon, group: "Pilotage", hint: "Clôture de journée" },
+  { id: "packaging", label: "Packaging", icon: Package, group: "Flux & Pilotage", hint: "Bibliothèque packaging" },
+  { id: "adjustments", label: "Adjustments", icon: SlidersHorizontal, group: "Flux & Pilotage", hint: "Suivi des ajustements d'inventaire" },
   { id: "cites", label: "CITES", icon: Leaf, group: "Flux", hint: "Réglementation" },
   { id: "expeditions", label: "Expéditions", icon: Truck, group: "Flux", hint: "FastShipment" },
   { id: "mao", label: "E-commerce / MAO", icon: ShoppingBag, group: "Flux", hint: "Commandes web" },
@@ -36,7 +39,7 @@ const NAV: { id: View; label: string; icon: typeof Home; group: "Pilotage" | "Fl
   { id: "import", label: "Import Center", icon: Upload, group: "Données", hint: "Import des fichiers" },
 ];
 
-const GROUPS = ["Pilotage", "Flux", "Données"] as const;
+const GROUPS = ["Pilotage", "Flux & Pilotage", "Flux", "Données"] as const;
 
 export function Layout({
   view,

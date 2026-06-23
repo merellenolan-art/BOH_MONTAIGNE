@@ -9,6 +9,7 @@ import { CitesDashboard } from "./pages/CitesDashboard";
 import { ExpeditionsDashboard } from "./pages/ExpeditionsDashboard";
 import { MaoDashboard } from "./pages/MaoDashboard";
 import { OracleDashboard } from "./pages/OracleDashboard";
+import { AdjustmentsDashboard } from "./pages/AdjustmentsDashboard";
 import { useStore } from "./lib/useStore";
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
       {view === "expeditions" && <ExpeditionsDashboard store={store} setView={setView} notify={notify} />}
       {view === "mao"         && <MaoDashboard store={store} setView={setView} notify={notify} />}
       {view === "oracle"      && <OracleDashboard store={store} setView={setView} notify={notify} />}
+      {view === "adjustments" && <AdjustmentsDashboard store={store} notify={notify} />}
       {view === "import"      && <ImportCenter store={store} notify={notify} />}
     </Layout>
   );

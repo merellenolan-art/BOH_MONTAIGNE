@@ -1392,3 +1392,78 @@ export function countNegativeStock(imp: ImportRecord): number {
 export function countAgedTransits(imp: ImportRecord): number {
   return extractTransitRows(imp).filter((r) => r.aging >= 8).length;
 }
+
+/* ------------------------------------------------------------------ */
+/* Adjustments — detection & extraction                               */
+/* ------------------------------------------------------------------ */
+
+const ADJUST_SIGNALS = [
+  "adjust", "adjustment", "variance", "difference", "diff",
+  "posting date", "material", "quantity", "amount", "value", "department",
+];
+
+export function isAdjustmentFile(headers: string[], fileName: string = ""): boolean {
+  const norm = headers.map(normalizeHeaderKey).join(" | ");
+  const fn = normalizeHeaderKey(fileName);
+  let hits = 0;
+  for (const sig of ADJUST_SIGNALS) if (norm.includes(sig)) hits += 1;
+  if (fn.includes("adjust") || fn.includes("variance")) hits += 2;
+  return hits >= 2;
+}
+
+export interface AdjustmentRow {
+  date: string;
+  department: string;
+  style: string;
+  sku: string;
+  description: string;
+  quantity: number;
+  value: number;
+  reason: string;
+  user: string;
+}
+
+const ADJUST_KEYWORDS: Record<string, string[]> = {
+  date: ["posting date", "document date", "date", "created"],
+  department: ["department", "dept", "division", "hierarchy"],
+  style: ["style", "article"],
+  sku: ["material", "article", "sku"],
+  description: ["description", "desc", "text"],
+  quantity: ["quantity", "qty", "amount quantity", "adjustment quantity"],
+  value: ["value", "amount", "net value", "sales value"],
+  reason: ["reason", "movement", "mvt", "type", "motif"],
+  user: ["user", "username", "created by", "clerk"],
+};
+
+export function extractAdjustmentRows(imp: ImportRecord): AdjustmentRow[] {
+  if (!imp.rows || imp.rows.length === 0) return [];
+  const headers = Object.values(imp.headers ?? {})[0] ?? Object.keys(imp.rows[0] ?? {});
+  const cols: Record<string, string | undefined> = {};
+  for (const k of Object.keys(ADJUST_KEYWORDS)) {
+    cols[k] = findHeader(headers, ADJUST_KEYWORDS[k]);
+  }
+  const out: AdjustmentRow[] = [];
+  for (const raw of imp.rows) {
+    const resolve = (field: string, letter: string) => {
+      const h = cols[field];
+      if (h && raw[h] !== undefined && raw[h] !== "") return raw[h];
+      return getByLetter(raw, letter);
+    };
+    const qtyRaw = resolve("quantity", "R");
+    const qty = toNumber(qtyRaw);
+    if (qtyRaw === undefined || qtyRaw === "") continue;
+    const valueRaw = resolve("value", "U");
+    out.push({
+      date: toDate(resolve("date", "B")),
+      department: toStr(resolve("department", "C")) || "À mapper",
+      style: toStr(resolve("style", "L")),
+      sku: toStr(resolve("sku", "K")),
+      description: toStr(resolve("description", "M")),
+      quantity: qty,
+      value: toNumber(valueRaw),
+      reason: toStr(resolve("reason", "")),
+      user: toStr(resolve("user", "")),
+    });
+  }
+  return out;
+}
