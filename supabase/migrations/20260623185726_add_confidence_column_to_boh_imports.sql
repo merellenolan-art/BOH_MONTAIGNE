@@ -1,0 +1,1 @@
+ALTER TABLE boh_imports ADD COLUMN IF NOT EXISTS confidence integer;
