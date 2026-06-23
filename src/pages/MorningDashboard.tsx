@@ -210,11 +210,23 @@ export function MorningDashboard({
         title="Morning Dashboard"
         subtitle="Stock On Hand (MB52) & transit (VL06I) — anomalies et ancienneté des transits"
         actions={
-          <button className="btn-ghost" onClick={refresh} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualiser
-          </button>
+          <>
+            <button className="btn-ghost" onClick={() => setView("import")}>
+              <Upload className="h-4 w-4" /> Importer
+            </button>
+            <button className="btn-ghost" onClick={refresh} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualiser
+            </button>
+          </>
         }
       />
+
+      {!latestVL06I && !latestMB52 && (
+        <div className="card p-3 border-l-2 border-amber-500/60 bg-amber-900/10 text-xs text-amber-200 flex items-center gap-2">
+          <Upload className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+          Aucun fichier importé. Les données seront affichées après import et validation du mapping.
+        </div>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KpiCard label="Pièces en transit" value={fmtNum(transitQty)} sub={latestVL06I ? latestVL06I.file_name : "Aucun import"} accent="steel" icon={<Truck className="h-4 w-4" />} />
@@ -232,72 +244,74 @@ export function MorningDashboard({
       {/* Stocks négatifs */}
       <div>
         <h2 className="text-sm font-semibold text-graphite-900 mb-3 uppercase tracking-wider">Stocks négatifs</h2>
-        {!latestMB52 ? (
-          <EmptySource text="Aucune donnée importée" onImport={() => setView("import")} />
-        ) : (
-          <>
-            <div className="card p-3 flex flex-col sm:flex-row gap-3 sm:items-center mb-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-graphite-400" />
-                <input className="input pl-9" placeholder="Rechercher SKU, style, description…" value={negSearch} onChange={(e) => setNegSearch(e.target.value)} />
-              </div>
-              <select className="select w-auto" value={negDept} onChange={(e) => setNegDept(e.target.value)}>
-                <option value="all">Tous départements</option>
-                {negDepts.map((d) => <option key={d} value={d}>{d}</option>)}
-              </select>
-              <div className="flex gap-1.5 sm:ml-auto">
-                <button className="btn-ghost text-sm" onClick={() => exportTable("morning_negative_stock.csv", filteredNeg as unknown as Record<string, unknown>[], "csv")}>CSV</button>
-                <button className="btn-ghost text-sm" onClick={() => exportTable("morning_negative_stock.xlsx", filteredNeg as unknown as Record<string, unknown>[], "xlsx")}>Excel</button>
-              </div>
-            </div>
-            <div className="table-wrap">
-              <div className="overflow-x-auto scrollbar-thin">
-                <table className="table-base">
-                  <thead>
-                    <tr>
-                      <th className="px-3 py-2.5 text-left">Style</th>
-                      <th className="px-3 py-2.5 text-left">SKU</th>
-                      <th className="px-3 py-2.5 text-left">Description</th>
-                      <th className="px-3 py-2.5 text-left">Département</th>
-                      <th className="px-3 py-2.5 text-right">Quantité</th>
-                      <th className="px-3 py-2.5 text-left">Note / Action</th>
+        <div className="card p-3 flex flex-col sm:flex-row gap-3 sm:items-center mb-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-graphite-400" />
+            <input className="input pl-9" placeholder="Rechercher SKU, style, description…" value={negSearch} onChange={(e) => setNegSearch(e.target.value)} />
+          </div>
+          <select className="select w-auto" value={negDept} onChange={(e) => setNegDept(e.target.value)}>
+            <option value="all">Tous départements</option>
+            {negDepts.map((d) => <option key={d} value={d}>{d}</option>)}
+          </select>
+          <div className="flex gap-1.5 sm:ml-auto">
+            <button className="btn-ghost text-sm" onClick={() => exportTable("morning_negative_stock.csv", filteredNeg as unknown as Record<string, unknown>[], "csv")}>CSV</button>
+            <button className="btn-ghost text-sm" onClick={() => exportTable("morning_negative_stock.xlsx", filteredNeg as unknown as Record<string, unknown>[], "xlsx")}>Excel</button>
+          </div>
+        </div>
+        <div className="table-wrap">
+          <div className="overflow-x-auto scrollbar-thin">
+            <table className="table-base">
+              <thead>
+                <tr>
+                  <th className="px-3 py-2.5 text-left">Style</th>
+                  <th className="px-3 py-2.5 text-left">SKU</th>
+                  <th className="px-3 py-2.5 text-left">Description</th>
+                  <th className="px-3 py-2.5 text-left">Département</th>
+                  <th className="px-3 py-2.5 text-right">Quantité</th>
+                  <th className="px-3 py-2.5 text-left">Note / Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredNeg.map((n, i) => {
+                  const key = `${latestMB52?.id ?? ""}|${n.sku}|${n.department}`;
+                  const note = negNoteMap.get(key)?.note ?? "";
+                  const draft = noteDraft[key] ?? note;
+                  return (
+                    <tr key={i} className="row-action">
+                      <td className="px-3 py-2 font-mono text-xs">{n.style}</td>
+                      <td className="px-3 py-2 font-mono text-xs">{n.sku}</td>
+                      <td className="px-3 py-2 text-xs">{n.description}</td>
+                      <td className="px-3 py-2 font-mono text-xs">{n.department}</td>
+                      <td className="px-3 py-2 text-right tabular-nums font-semibold text-rose-400">{fmtNum(n.quantity)}</td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-1">
+                          <input
+                            className="input py-1 text-xs"
+                            value={draft}
+                            placeholder="Ajouter une note…"
+                            onChange={(e) => setNoteDraft((p) => ({ ...p, [key]: e.target.value }))}
+                          />
+                          <button className="btn-ghost text-xs px-2 py-1" onClick={() => saveNegNote(key, n.sku, n.department)} disabled={!latestMB52}>
+                            OK
+                          </button>
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {filteredNeg.map((n, i) => {
-                      const key = `${latestMB52.id}|${n.sku}|${n.department}`;
-                      const note = negNoteMap.get(key)?.note ?? "";
-                      const draft = noteDraft[key] ?? note;
-                      return (
-                        <tr key={i} className="row-action">
-                          <td className="px-3 py-2 font-mono text-xs">{n.style}</td>
-                          <td className="px-3 py-2 font-mono text-xs">{n.sku}</td>
-                          <td className="px-3 py-2 text-xs">{n.description}</td>
-                          <td className="px-3 py-2 font-mono text-xs">{n.department}</td>
-                          <td className="px-3 py-2 text-right tabular-nums font-semibold text-rose-400">{fmtNum(n.quantity)}</td>
-                          <td className="px-3 py-2">
-                            <div className="flex items-center gap-1">
-                              <input
-                                className="input py-1 text-xs"
-                                value={draft}
-                                placeholder="Ajouter une note…"
-                                onChange={(e) => setNoteDraft((p) => ({ ...p, [key]: e.target.value }))}
-                              />
-                              <button className="btn-ghost text-xs px-2 py-1" onClick={() => saveNegNote(key, n.sku, n.department)} disabled={!latestMB52}>
-                                OK
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {filteredNeg.length === 0 && <tr><td colSpan={6} className="text-center text-graphite-400 py-6">Aucun stock négatif.</td></tr>}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </>
-        )}
+                  );
+                })}
+                {filteredNeg.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="text-center text-graphite-400 py-8 text-xs">
+                      {!latestMB52
+                        ? "Aucun fichier importé — importez un fichier Stock OH (MB52) pour afficher les données."
+                        : "Aucun stock négatif."}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       {/* Transits */}
@@ -305,109 +319,111 @@ export function MorningDashboard({
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-graphite-900 uppercase tracking-wider">Transits (VL06I)</h2>
         </div>
-        {!latestVL06I ? (
-          <EmptySource text="Aucune donnée importée" onImport={() => setView("import")} />
-        ) : (
-          <>
-            <div className="card p-3 flex flex-col sm:flex-row gap-3 sm:items-center mb-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-graphite-400" />
-                <input className="input pl-9" placeholder="Rechercher facture, SKU, style, description…" value={search} onChange={(e) => setSearch(e.target.value)} />
-              </div>
-              <select className="select w-auto" value={dept} onChange={(e) => setDept(e.target.value)}>
-                <option value="all">Tous départements</option>
-                {depts.map((d) => <option key={d} value={d}>{d}</option>)}
-              </select>
-              <select className="select w-auto" value={aging} onChange={(e) => setAging(e.target.value)}>
-                <option value="all">Toutes anciennetés</option>
-                <option value="ok">0-2 jours</option>
-                <option value="attention">3-7 jours</option>
-                <option value="action">8 jours et +</option>
-              </select>
-              <label className="flex items-center gap-1.5 text-xs text-graphite-500 cursor-pointer">
-                <input type="checkbox" checked={onlyAged} onChange={(e) => setOnlyAged(e.target.checked)} className="accent-house-500" />
-                ≥ 8 jours
-              </label>
-              <div className="flex gap-1.5 sm:ml-auto">
-                <button className="btn-ghost text-sm" onClick={() => exportTable("morning_transits.csv", filteredTransits as unknown as Record<string, unknown>[], "csv")}>CSV</button>
-                <button className="btn-ghost text-sm" onClick={() => exportTable("morning_transits.xlsx", filteredTransits as unknown as Record<string, unknown>[], "xlsx")}>Excel</button>
-                <button className="btn-dark text-sm" onClick={async () => { await copyWhatsApp("Morning Report", waSummary); notify("Résumé WhatsApp copié"); }}>WhatsApp</button>
-              </div>
-            </div>
-            <div className="table-wrap">
-              <div className="overflow-x-auto scrollbar-thin">
-                <table className="table-base">
-                  <thead>
-                    <tr>
-                      <th className="px-3 py-2.5 text-left">Date</th>
-                      <th className="px-3 py-2.5 text-left">Facture / Livraison</th>
-                      <th className="px-3 py-2.5 text-left">SKU</th>
-                      <th className="px-3 py-2.5 text-left">Style</th>
-                      <th className="px-3 py-2.5 text-left">Description</th>
-                      <th className="px-3 py-2.5 text-right">Quantité</th>
-                      <th className="px-3 py-2.5 text-left">Département</th>
-                      <th className="px-3 py-2.5 text-right">Ancienneté</th>
-                      <th className="px-3 py-2.5 text-left">Statut</th>
-                      <th className="px-3 py-2.5 text-left">Note / Action</th>
+        <div className="card p-3 flex flex-col sm:flex-row gap-3 sm:items-center mb-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-graphite-400" />
+            <input className="input pl-9" placeholder="Rechercher facture, SKU, style, description…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+          <select className="select w-auto" value={dept} onChange={(e) => setDept(e.target.value)}>
+            <option value="all">Tous départements</option>
+            {depts.map((d) => <option key={d} value={d}>{d}</option>)}
+          </select>
+          <select className="select w-auto" value={aging} onChange={(e) => setAging(e.target.value)}>
+            <option value="all">Toutes anciennetés</option>
+            <option value="ok">0-2 jours</option>
+            <option value="attention">3-7 jours</option>
+            <option value="action">8 jours et +</option>
+          </select>
+          <label className="flex items-center gap-1.5 text-xs text-graphite-500 cursor-pointer">
+            <input type="checkbox" checked={onlyAged} onChange={(e) => setOnlyAged(e.target.checked)} className="accent-house-500" />
+            ≥ 8 jours
+          </label>
+          <div className="flex gap-1.5 sm:ml-auto">
+            <button className="btn-ghost text-sm" onClick={() => exportTable("morning_transits.csv", filteredTransits as unknown as Record<string, unknown>[], "csv")}>CSV</button>
+            <button className="btn-ghost text-sm" onClick={() => exportTable("morning_transits.xlsx", filteredTransits as unknown as Record<string, unknown>[], "xlsx")}>Excel</button>
+            <button className="btn-dark text-sm" onClick={async () => { await copyWhatsApp("Morning Report", waSummary); notify("Résumé WhatsApp copié"); }}>WhatsApp</button>
+          </div>
+        </div>
+        <div className="table-wrap">
+          <div className="overflow-x-auto scrollbar-thin">
+            <table className="table-base">
+              <thead>
+                <tr>
+                  <th className="px-3 py-2.5 text-left">Date</th>
+                  <th className="px-3 py-2.5 text-left">Facture / Livraison</th>
+                  <th className="px-3 py-2.5 text-left">SKU</th>
+                  <th className="px-3 py-2.5 text-left">Style</th>
+                  <th className="px-3 py-2.5 text-left">Description</th>
+                  <th className="px-3 py-2.5 text-right">Quantité</th>
+                  <th className="px-3 py-2.5 text-left">Département</th>
+                  <th className="px-3 py-2.5 text-right">Ancienneté</th>
+                  <th className="px-3 py-2.5 text-left">Statut</th>
+                  <th className="px-3 py-2.5 text-left">Note / Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTransits.map((t, i) => {
+                  const key = `${latestVL06I?.id ?? ""}|${t.reference}|${t.sku}`;
+                  const note = transitNoteMap.get(key)?.note ?? "";
+                  const draft = noteDraft[key] ?? note;
+                  return (
+                    <tr key={i} className={rowCls(t.risk)}>
+                      <td className="px-3 py-2 text-xs">{t.date}</td>
+                      <td className="px-3 py-2 font-mono text-xs">{t.reference}</td>
+                      <td className="px-3 py-2 font-mono text-xs">{t.sku}</td>
+                      <td className="px-3 py-2 font-mono text-xs">{t.style}</td>
+                      <td className="px-3 py-2 text-xs">{t.description}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{fmtNum(t.quantity)}</td>
+                      <td className="px-3 py-2 font-mono text-xs">{t.department}</td>
+                      <td className={`px-3 py-2 text-right tabular-nums ${t.risk === "action" ? "font-bold text-rose-400" : t.risk === "attention" ? "text-amber-300" : ""}`}>
+                        {t.aging} j
+                      </td>
+                      <td className="px-3 py-2"><RiskTag level={t.risk} /></td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-1">
+                          <input
+                            className="input py-1 text-xs"
+                            value={draft}
+                            placeholder="Ajouter une note…"
+                            onChange={(e) => setNoteDraft((p) => ({ ...p, [key]: e.target.value }))}
+                          />
+                          <button className="btn-ghost text-xs px-2 py-1" onClick={() => saveTransitNote(key, t.reference, t.sku)}>
+                            OK
+                          </button>
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {filteredTransits.map((t, i) => {
-                      const key = `${latestVL06I.id}|${t.reference}|${t.sku}`;
-                      const note = transitNoteMap.get(key)?.note ?? "";
-                      const draft = noteDraft[key] ?? note;
-                      return (
-                        <tr key={i} className={rowCls(t.risk)}>
-                          <td className="px-3 py-2 text-xs">{t.date}</td>
-                          <td className="px-3 py-2 font-mono text-xs">{t.reference}</td>
-                          <td className="px-3 py-2 font-mono text-xs">{t.sku}</td>
-                          <td className="px-3 py-2 font-mono text-xs">{t.style}</td>
-                          <td className="px-3 py-2 text-xs">{t.description}</td>
-                          <td className="px-3 py-2 text-right tabular-nums">{fmtNum(t.quantity)}</td>
-                          <td className="px-3 py-2 font-mono text-xs">{t.department}</td>
-                          <td className={`px-3 py-2 text-right tabular-nums ${t.risk === "action" ? "font-bold text-rose-400" : t.risk === "attention" ? "text-amber-300" : ""}`}>
-                            {t.aging} j
-                          </td>
-                          <td className="px-3 py-2"><RiskTag level={t.risk} /></td>
-                          <td className="px-3 py-2">
-                            <div className="flex items-center gap-1">
-                              <input
-                                className="input py-1 text-xs"
-                                value={draft}
-                                placeholder="Ajouter une note…"
-                                onChange={(e) => setNoteDraft((p) => ({ ...p, [key]: e.target.value }))}
-                              />
-                              <button className="btn-ghost text-xs px-2 py-1" onClick={() => saveTransitNote(key, t.reference, t.sku)}>
-                                OK
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {filteredTransits.length === 0 && <tr><td colSpan={10} className="text-center text-graphite-400 py-6">Aucun transit.</td></tr>}
-                  </tbody>
-                  {filteredTransits.length > 0 && (
-                    <tfoot>
-                      <tr className="bg-graphite-50 font-semibold">
-                        <td colSpan={5} className="px-3 py-2 text-right text-xs text-graphite-500">Total visible :</td>
-                        <td className="px-3 py-2 text-right tabular-nums text-graphite-900">{fmtNum(visibleTransitQty)}</td>
-                        <td colSpan={4} />
-                      </tr>
-                    </tfoot>
-                  )}
-                </table>
-              </div>
-            </div>
-            {transitOverWeek > 0 && (
-              <div className="mt-3 card p-3 border-amber-700/40 bg-amber-900/20">
-                <p className="text-sm font-medium text-amber-300">
-                  <AlertTriangle className="inline h-4 w-4 mr-1" />
-                  {transitOverWeek} facture(s) en transit depuis 8 jours ou plus — à relancer.
-                </p>
-              </div>
-            )}
-          </>
+                  );
+                })}
+                {filteredTransits.length === 0 && (
+                  <tr>
+                    <td colSpan={10} className="text-center text-graphite-400 py-8 text-xs">
+                      {!latestVL06I
+                        ? "Aucun fichier importé — importez un fichier Transit (VL06I) pour afficher les données."
+                        : "Aucun transit."}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+              {filteredTransits.length > 0 && (
+                <tfoot>
+                  <tr className="bg-graphite-50 font-semibold">
+                    <td colSpan={5} className="px-3 py-2 text-right text-xs text-graphite-500">Total visible :</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-graphite-900">{fmtNum(visibleTransitQty)}</td>
+                    <td colSpan={4} />
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
+        </div>
+        {transitOverWeek > 0 && (
+          <div className="mt-3 card p-3 border-amber-700/40 bg-amber-900/20">
+            <p className="text-sm font-medium text-amber-300">
+              <AlertTriangle className="inline h-4 w-4 mr-1" />
+              {transitOverWeek} facture(s) en transit depuis 8 jours ou plus — à relancer.
+            </p>
+          </div>
         )}
       </div>
 

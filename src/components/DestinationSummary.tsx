@@ -15,7 +15,7 @@ export function buildDestinationSummary(rows: NormalizedRow[]): DestinationSumma
   return { rowsByZone, total };
 }
 
-const ZONE_ORDER: DestinationZone[] = ["France", "Europe", "Trecate", "Autre"];
+const ZONE_ORDER: DestinationZone[] = ["France", "Europe", "Trecate"];
 
 /** Compact destination breakdown card used by Home & Evening dashboards. */
 export function DestinationSummaryCard({

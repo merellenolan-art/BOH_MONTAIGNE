@@ -30,7 +30,7 @@ const NAV: { id: View; label: string; icon: typeof Home; group: "Pilotage" | "Fl
   { id: "home", label: "Home Dashboard", icon: Home, group: "Pilotage", hint: "Centre de pilotage" },
   { id: "morning", label: "Morning Dashboard", icon: Sunrise, group: "Pilotage", hint: "Stock & transit" },
   { id: "evening", label: "Evening Dashboard", icon: Moon, group: "Pilotage", hint: "Clôture de journée" },
-  { id: "adjustments", label: "Adjustments", icon: SlidersHorizontal, group: "Pilotage", hint: "Suivi des ajustements d'inventaire" },
+  { id: "adjustments", label: "Adjustments Dashboard", icon: SlidersHorizontal, group: "Pilotage", hint: "Suivi des ajustements d'inventaire" },
   { id: "oracle", label: "Caisse Dashboard", icon: Receipt, group: "Pilotage", hint: "Oracle vs SAP" },
   { id: "packaging", label: "Packaging Dashboard", icon: Package, group: "Flux", hint: "Bibliothèque packaging" },
   { id: "cites", label: "CITES Dashboard", icon: Leaf, group: "Flux", hint: "Réglementation" },
